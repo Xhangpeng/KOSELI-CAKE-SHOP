@@ -289,7 +289,7 @@ const CartPage = ({
                   </div>
 
                   <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-6 min-w-[150px]">
-                    <span className="font-heading font-bold text-2xl text-champagne">Rs. {item.price}</span>
+                    <span className="font-heading font-bold text-lg text-champagne/70 font-medium"> {item.price}</span>
                     <div className="flex items-center bg-emerald-deep/5 rounded-2xl p-1 border border-emerald-deep/5">
                       <Button 
                         variant="ghost" 
@@ -328,7 +328,7 @@ const CartPage = ({
             <div className="space-y-4">
               <div className="flex justify-between text-sm font-medium text-emerald-deep/60">
                 <span>Subtotal ({cart.length} items)</span>
-                <span>Rs. {totalAmount}</span>
+                <span className="text-muted-foreground/70"> {totalAmount}</span>
               </div>
               <div className="flex justify-between text-sm font-medium text-emerald-deep/60">
                 <span>Delivery Fee</span>
@@ -339,7 +339,7 @@ const CartPage = ({
                 <div className="flex justify-between items-end">
                   <div>
                     <p className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">Total Amount</p>
-                    <p className="text-4xl font-heading font-bold text-emerald-deep">Rs. {totalAmount}</p>
+                    <p className="text-2xl font-heading font-bold text-emerald-deep/80"> {totalAmount}</p>
                   </div>
                 </div>
               </div>
@@ -449,7 +449,7 @@ const ProductCard: React.FC<{
   const navigate = useNavigate();
   
   return (
-    <Card className={`group overflow-hidden border-none shadow-sm hover:shadow-2xl transition-all duration-700 rounded-[3rem] bg-white flex flex-col h-full relative ${!product.inStock ? 'opacity-80 grayscale-[0.3]' : ''}`}>
+    <Card className={`group overflow-hidden border-none shadow-sm hover:shadow-2xl transition-all duration-700 rounded-[3rem] bg-white flex flex-col h-full relative ${!product.inStock ? 'opacity-80 ' : ''}`}>
       <div 
         className="relative aspect-[4/5] overflow-hidden bg-muted cursor-pointer"
         onClick={() => navigate(`/product/${product.id}`)}
@@ -490,7 +490,7 @@ const ProductCard: React.FC<{
             <h4 className="font-heading font-bold text-2xl text-emerald-deep leading-tight group-hover:text-champagne transition-colors">{product.name}</h4>
             <p className="text-[10px] text-emerald-deep/40 font-bold uppercase tracking-[0.2em]">{product.characteristics[0] || 'Artisan Creation'}</p>
           </div>
-          <span className="font-heading font-bold text-2xl text-champagne">Rs. {product.price}</span>
+          <span className="font-heading font-bold text-lg text-champagne/70 font-medium"> {product.price}</span>
         </div>
         
         <p className="text-sm text-muted-foreground line-clamp-2 font-medium leading-relaxed">
@@ -604,7 +604,7 @@ const ProductDetailsPage = ({
           <div className="flex flex-col gap-6">
             <h1 className="text-6xl md:text-8xl font-heading font-bold text-emerald-deep tracking-tighter leading-[0.85] italic">{product.name}</h1>
             <div className="flex items-center gap-8 mt-6">
-              <span className="text-5xl font-heading font-bold text-champagne">Rs. {product.price}</span>
+              <span className="text-3xl font-sans font-medium text-champagne/70 tracking-wide"> {product.price}</span>
               <div className="h-[1px] w-16 bg-emerald-deep/10" />
               <span className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-[0.4em]">Artisan Creation</span>
             </div>
@@ -1719,13 +1719,13 @@ export default function App() {
                                             <span className="font-bold text-maroon">{item.cakeName}</span>
                                             <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Qty: {item.quantity}</span>
                                           </div>
-                                          <span className="font-bold">Rs. {item.price * item.quantity}</span>
+                                          <span className="font-medium text-muted-foreground/70"> {item.price * item.quantity}</span>
                                         </div>
                                       ))}
                                       <Separator className="bg-maroon/10" />
                                       <div className="flex justify-between font-bold text-maroon text-lg">
                                         <span>Total</span>
-                                        <span className="text-gold">Rs. {order.totalAmount}</span>
+                                        <span className="text-gold/80 font-medium"> {order.totalAmount}</span>
                                       </div>
                                     </div>
                                   </div>
@@ -2099,7 +2099,7 @@ export default function App() {
               <div className="bg-maroon/5 p-5 rounded-2xl space-y-3 mt-4 border border-maroon/10">
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <span>Items ({cart.length})</span>
-                  <span>Rs. {totalAmount}</span>
+                  <span className="text-muted-foreground/70"> {totalAmount}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <span>Delivery Fee</span>
@@ -2108,7 +2108,7 @@ export default function App() {
                 <Separator className="bg-maroon/10" />
                 <div className="flex items-center justify-between font-bold text-maroon">
                   <span className="text-base">Grand Total</span>
-                  <span className="text-xl">Rs. {totalAmount}</span>
+                  <span className="text-lg text-muted-foreground/70"> {totalAmount}</span>
                 </div>
               </div>
               
@@ -2238,7 +2238,7 @@ export default function App() {
                         <div className="flex flex-col gap-5 bg-maroon/[0.02] p-5 rounded-2xl border border-maroon/5">
                           <div>
                             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Total Amount</p>
-                            <p className="text-2xl font-bold text-maroon">Rs. {order.totalAmount}</p>
+                            <p className="text-xl font-bold text-maroon/70"> {order.totalAmount}</p>
                           </div>
                           <Separator className="bg-maroon/10" />
                           <div>
@@ -2348,12 +2348,12 @@ export default function App() {
                                         <p className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">Qty: {item.quantity}</p>
                                       </div>
                                     </div>
-                                    <span className="text-sm font-bold text-emerald-deep">Rs. {item.price * item.quantity}</span>
+                                    <span className="text-sm font-medium text-emerald-deep/70"> {item.price * item.quantity}</span>
                                   </div>
                                 ))}
                                 <div className="pt-4 border-t border-emerald-deep/5 flex justify-between items-center">
                                   <span className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">Total Amount</span>
-                                  <span className="text-2xl font-heading font-bold text-champagne">Rs. {order.totalAmount}</span>
+                                  <span className="text-xl font-heading font-medium text-champagne/70"> {order.totalAmount}</span>
                                 </div>
                               </div>
                             </div>
@@ -2450,7 +2450,7 @@ export default function App() {
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1 min-w-0">
                               <h4 className="font-heading font-bold text-lg text-emerald-deep truncate">{product.name}</h4>
-                              <p className="text-xl font-bold text-champagne mt-1">Rs. {product.price}</p>
+                              <p className="text-sm font-medium text-champagne/70 mt-1 tracking-wide"> {product.price}</p>
                             </div>
                             <Button 
                               size="sm" 
@@ -2490,7 +2490,7 @@ export default function App() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="p-price" className="text-xs font-bold uppercase tracking-widest text-maroon/60">Price (Rs.)</Label>
+                <Label htmlFor="p-price" className="text-xs font-bold uppercase tracking-widest text-maroon/60">Price</Label>
                 <Input id="p-price" type="number" value={productFormData.price} onChange={(e) => setProductFormData({...productFormData, price: Number(e.target.value)})} className="rounded-xl border-maroon/10 focus:ring-maroon" />
               </div>
               <div className="grid gap-2">
