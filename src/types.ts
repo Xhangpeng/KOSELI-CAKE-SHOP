@@ -15,6 +15,7 @@ export interface OrderItem {
   cakeName: string;
   cakeDesign: string;
   price: number;
+  imageUrl?: string;
 }
 
 export interface DeliveryDetails {
@@ -23,6 +24,7 @@ export interface DeliveryDetails {
   address: string;
   deliveryDate: string;
   deliveryTime: string;
+  deliveryMethod?: 'delivery' | 'pickup';
 }
 
 export interface TimelineEvent {

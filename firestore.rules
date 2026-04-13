@@ -7,12 +7,40 @@ service cloud.firestore {
     // ===============================================================
     // 
     // Collection: products
-    // Fields: name, description, price, category, imageUrl, characteristics
+    // Fields:
+    //   - name: string (1-100)
+    //   - description: string (0-1000)
+    //   - price: number (>0)
+    //   - category: string (enum)
+    //   - imageUrl: string (URL)
+    //   - characteristics: list (strings)
+    //   - inStock: bool
     //
     // Collection: orders
-    // Fields: userId, items, deliveryDetails, totalAmount, status, paymentStatus, paymentMethod, timeline, createdAt
+    // Fields:
+    //   - userId: string (matches auth.uid)
+    //   - items: list (OrderItem objects)
+    //   - deliveryDetails: map (fullName, phone, address, deliveryDate, deliveryTime)
+    //   - totalAmount: number (>0)
+    //   - status: string (enum)
+    //   - paymentStatus: string (enum)
+    //   - paymentMethod: string (enum)
+    //   - timeline: list (TimelineEvent objects)
+    //   - createdAt: timestamp
+    //
+    // Collection: users
+    // Fields:
+    //   - uid: string
+    //   - email: string (email)
+    //   - displayName: string
+    //   - photoURL: string (URL)
+    //   - role: string (admin/user)
     // ===============================================================
 
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -28,19 +56,81 @@ service cloud.firestore {
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'));
     }
 
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidProduct(data) {
+      return data.keys().hasAll(['name', 'price', 'category', 'imageUrl', 'inStock']) &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+             data.price is number && data.price > 0 &&
+             data.category in ['Birthday', 'Anniversary', 'Wedding', 'Cupcakes', 'Pastries', 'Accessories', 'Combos'] &&
+             isValidUrl(data.imageUrl) &&
+             data.inStock is bool &&
+             (!('description' in data) || (data.description is string && data.description.size() <= 1000)) &&
+             (!('characteristics' in data) || (data.characteristics is list && data.characteristics.size() <= 20));
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll(['userId', 'items', 'deliveryDetails', 'totalAmount', 'status', 'paymentStatus']) &&
+             data.userId == request.auth.uid &&
+             data.items is list && data.items.size() >= 1 && data.items.size() <= 50 &&
+             data.totalAmount is number && data.totalAmount > 0 &&
+             data.status in ['pending', 'confirmed', 'picked', 'ready', 'delivered', 'cancelled'] &&
+             data.paymentStatus in ['unpaid', 'paid'] &&
+             (!('paymentMethod' in data) || data.paymentMethod in ['esewa', 'khalti', 'cod']) &&
+             data.deliveryDetails is map &&
+             data.deliveryDetails.fullName is string && data.deliveryDetails.fullName.size() >= 1 &&
+             data.deliveryDetails.phone is string && data.deliveryDetails.phone.size() >= 7 &&
+             data.deliveryDetails.address is string && data.deliveryDetails.address.size() >= 5;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'role']) &&
+             data.uid == request.auth.uid &&
+             isValidEmail(data.email) &&
+             data.displayName is string && data.displayName.size() >= 1 &&
+             data.role in ['admin', 'user'];
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
     match /products/{productId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create: if isAdmin() && isValidProduct(request.resource.data);
+      allow update: if isAdmin() && isValidProduct(request.resource.data);
+      allow delete: if isAdmin();
     }
 
     match /orders/{orderId} {
       allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAuthenticated() && (isAdmin() || (request.auth.uid == resource.data.userId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paymentStatus'])));
+      allow create: if isAuthenticated() && isValidOrder(request.resource.data);
+      allow update: if isAuthenticated() && (
+        isAdmin() || 
+        (request.auth.uid == resource.data.userId && 
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paymentStatus', 'status']) &&
+         request.resource.data.status == 'cancelled' && resource.data.status == 'pending')
+      );
+      allow delete: if isAdmin();
     }
 
     match /users/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && 
+                      (request.resource.data.role == 'user' || isAdmin());
+      allow update: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && 
+                      (request.resource.data.role == resource.data.role || isAdmin());
+      allow delete: if isAdmin();
     }
   }
 }

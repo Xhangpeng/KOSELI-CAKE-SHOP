@@ -9,11 +9,12 @@
         "name": { "type": "string" },
         "description": { "type": "string" },
         "price": { "type": "number" },
-        "category": { "type": "string", "enum": ["Birthday", "Anniversary", "Wedding", "Cupcakes", "Pastries"] },
+        "category": { "type": "string", "enum": ["Birthday", "Anniversary", "Wedding", "Cupcakes", "Pastries", "Accessories", "Combos"] },
         "imageUrl": { "type": "string", "format": "uri" },
-        "characteristics": { "type": "array", "items": { "type": "string" } }
+        "characteristics": { "type": "array", "items": { "type": "string" } },
+        "inStock": { "type": "boolean" }
       },
-      "required": ["name", "price", "category", "imageUrl"]
+      "required": ["name", "price", "category", "imageUrl", "inStock"]
     },
     "Order": {
       "title": "Order",
@@ -41,13 +42,14 @@
             "fullName": { "type": "string" },
             "phone": { "type": "string" },
             "address": { "type": "string" },
-            "deliveryDate": { "type": "string", "format": "date-time" }
+            "deliveryDate": { "type": "string", "format": "date-time" },
+            "deliveryTime": { "type": "string" }
           }
         },
         "totalAmount": { "type": "number" },
-        "status": { "type": "string", "enum": ["pending", "confirmed", "picked", "ready", "delivered"] },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "picked", "ready", "delivered", "cancelled"] },
         "paymentStatus": { "type": "string", "enum": ["unpaid", "paid"] },
-        "paymentMethod": { "type": "string", "enum": ["esewa", "khalti"] },
+        "paymentMethod": { "type": "string", "enum": ["esewa", "khalti", "cod"] },
         "timeline": {
           "type": "array",
           "items": {
@@ -62,6 +64,19 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "items", "deliveryDetails", "totalAmount", "status", "paymentStatus"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string", "format": "uri" },
+        "role": { "type": "string", "enum": ["admin", "user"] }
+      },
+      "required": ["uid", "email", "displayName", "role"]
     }
   },
   "firestore": {
@@ -72,6 +87,10 @@
     "/orders": {
       "schema": "Order",
       "description": "Customer orders"
+    },
+    "/users": {
+      "schema": "UserProfile",
+      "description": "User profiles"
     }
   }
 }

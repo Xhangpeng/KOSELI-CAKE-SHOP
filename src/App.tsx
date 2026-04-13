@@ -36,7 +36,10 @@ import {
   Zap,
   Edit3,
   AlertCircle,
-  Trash2
+  Trash2,
+  ArrowRight,
+  Ticket,
+  Tag
 } from 'lucide-react';
 import { 
   auth, 
@@ -175,7 +178,9 @@ const CartPage = ({
   onCheckout, 
   onExplore,
   addToCart,
-  clearCart
+  clearCart,
+  paymentMethod,
+  setPaymentMethod
 }: { 
   cart: OrderItem[], 
   products: Product[], 
@@ -185,9 +190,11 @@ const CartPage = ({
   onCheckout: (method: 'esewa' | 'khalti' | 'cod') => void,
   onExplore: () => void,
   addToCart: (p: Product) => void,
-  clearCart: () => void
+  clearCart: () => void,
+  paymentMethod: 'esewa' | 'khalti' | 'cod',
+  setPaymentMethod: (m: 'esewa' | 'khalti' | 'cod') => void
 }) => {
-  const [paymentMethod, setPaymentMethod] = useState<'esewa' | 'khalti' | 'cod'>('cod');
+  const [voucherCode, setVoucherCode] = useState('');
 
   if (cart.length === 0) {
     return (
@@ -218,170 +225,169 @@ const CartPage = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="max-w-7xl mx-auto pt-12 pb-32 px-4 md:px-6"
+      className="max-w-7xl mx-auto pt-8 pb-48 px-4 md:px-6 flex-1 flex flex-col w-full"
     >
-      <div className="flex flex-col lg:flex-row gap-12">
-        <div className="flex-1 space-y-6">
+      <div className="flex flex-col lg:flex-row gap-8 items-stretch lg:items-start">
+        <div className="flex-1 w-full space-y-4">
           {/* Cart Header */}
-          <div className="bg-white p-6 rounded-3xl border border-emerald-deep/5 shadow-sm flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="h-6 w-6 rounded-lg border border-emerald-deep/20 flex items-center justify-center bg-emerald-deep/5">
-                <div className="h-3 w-3 rounded-sm bg-emerald-deep" />
+          <div className="bg-[#e5e5e0]/50 p-4 rounded-2xl border border-emerald-deep/5 shadow-sm flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-5 w-5 rounded-full border border-emerald-deep/20 flex items-center justify-center bg-white">
+                <div className="h-2.5 w-2.5 rounded-full bg-[#064e3b]" />
               </div>
-              <span className="text-[10px] font-bold text-emerald-deep uppercase tracking-widest">Select All ({cart.length} Items)</span>
+              <span className="text-[10px] font-bold text-emerald-deep uppercase tracking-[0.1em]">SELECT ALL ({cart.length} ITEMS)</span>
             </div>
             <Button 
               variant="ghost" 
               size="sm" 
-              className="text-[10px] font-bold text-coral hover:text-coral/80 uppercase tracking-widest flex items-center gap-2"
+              className="text-[10px] font-bold text-[#ff6b6b] hover:text-red-600 uppercase tracking-widest flex items-center gap-2"
               onClick={clearCart}
             >
-              <Trash2 className="h-4 w-4" /> Delete
+              <Trash2 className="h-3.5 w-3.5" /> DELETE
             </Button>
           </div>
 
-          {/* Bakery Header */}
-          <div className="bg-white p-6 rounded-3xl border border-emerald-deep/5 shadow-sm flex items-center gap-4">
-            <div className="h-6 w-6 rounded-lg border border-emerald-deep/20" />
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 bg-emerald-deep/5 rounded-xl flex items-center justify-center">
-                <CakeIcon className="h-4 w-4 text-emerald-deep" />
-              </div>
-              <span className="text-sm font-bold text-emerald-deep">Koseli Artisan Bakery</span>
-              <ChevronRight className="h-4 w-4 text-emerald-deep/20" />
-            </div>
-          </div>
-
           {/* Cart Items */}
-          <div className="space-y-6">
-            {cart.map((item, index) => (
-              <motion.div 
-                key={index}
-                layout
-                className="bg-white p-6 md:p-8 rounded-[3rem] border border-emerald-deep/5 shadow-sm flex flex-col md:flex-row gap-8 group relative hover:shadow-xl transition-all duration-500"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="h-6 w-6 rounded-lg border border-emerald-deep/20 mt-1 shrink-0 flex items-center justify-center bg-emerald-deep/5">
-                    <div className="h-3 w-3 rounded-sm bg-emerald-deep" />
-                  </div>
-                  <div className="h-32 w-32 md:h-40 md:w-40 overflow-hidden rounded-[2rem] bg-muted shrink-0 border border-emerald-deep/5 shadow-lg">
-                    <img 
-                      src={products.find(p => p.id === item.productId)?.imageUrl} 
-                      alt={item.cakeName} 
-                      className="h-full w-full object-cover transition-transform duration-[2s] group-hover:scale-110"
-                      referrerPolicy="no-referrer"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-1 flex-col md:flex-row justify-between gap-6">
-                  <div className="flex-1 space-y-2">
-                    <h4 className="font-heading font-bold text-2xl text-emerald-deep leading-tight group-hover:text-champagne transition-colors italic">{item.cakeName}</h4>
-                    <p className="text-[10px] text-emerald-deep/40 font-bold uppercase tracking-widest">Artisan Selection • Design: {item.cakeDesign || 'Standard'}</p>
-                    <div className="flex items-center gap-6 mt-6">
-                      <Button variant="ghost" size="icon" className="h-10 w-10 text-emerald-deep/20 hover:text-emerald-deep rounded-full hover:bg-emerald-deep/5">
-                        <Heart className="h-5 w-5" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-10 w-10 text-coral/40 hover:text-coral rounded-full hover:bg-coral/5" onClick={() => removeFromCart(index)}>
-                        <Trash2 className="h-5 w-5" />
-                      </Button>
+          <div className="space-y-4">
+            {cart.map((item, index) => {
+              const product = products.find(p => p.id === item.productId);
+              return (
+                <motion.div 
+                  key={index}
+                  layout
+                  className="bg-[#e5e5e0]/30 p-4 md:p-6 rounded-[2rem] border border-emerald-deep/5 shadow-sm flex gap-4 md:gap-6 group relative hover:shadow-md transition-all duration-300"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="h-5 w-5 rounded-full border border-emerald-deep/20 mt-1 shrink-0 flex items-center justify-center bg-white">
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#064e3b]" />
+                    </div>
+                    <div className="h-24 w-24 md:h-32 md:w-32 overflow-hidden rounded-[1.5rem] bg-muted shrink-0 border border-emerald-deep/5 shadow-inner">
+                      <img 
+                        src={product?.imageUrl || 'https://picsum.photos/seed/cake/400/400'} 
+                        alt={item.cakeName} 
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        referrerPolicy="no-referrer"
+                      />
                     </div>
                   </div>
 
-                  <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-6 min-w-[150px]">
-                    <span className="font-heading font-bold text-2xl text-champagne">Rs. {item.price}</span>
-                    <div className="flex items-center bg-emerald-deep/5 rounded-2xl p-1 border border-emerald-deep/5">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-10 w-10 rounded-xl hover:bg-white text-emerald-deep disabled:opacity-30"
-                        onClick={() => updateCartQuantity(index, -1)}
-                        disabled={item.quantity <= 1}
-                      >
-                        <Minus className="h-3 w-3" />
-                      </Button>
-                      <span className="font-heading font-bold text-emerald-deep min-w-[40px] text-center text-lg">{item.quantity}</span>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-10 w-10 rounded-xl hover:bg-white text-emerald-deep"
-                        onClick={() => updateCartQuantity(index, 1)}
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
+                  <div className="flex flex-1 flex-col justify-between py-1">
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="space-y-1">
+                        <h4 className="font-heading font-bold text-lg md:text-xl text-emerald-deep leading-tight italic">{item.cakeName}</h4>
+                        <p className="text-[10px] text-emerald-deep/40 font-bold uppercase tracking-widest">DESIGN: {item.cakeDesign || 'STANDARD'}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-deep/20 hover:text-emerald-deep rounded-full">
+                          <Heart className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-[#ff6b6b]/60 hover:text-[#ff6b6b] rounded-full" onClick={() => removeFromCart(index)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-end justify-between mt-4">
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-bold text-emerald-deep/30 uppercase tracking-widest">ARTISAN VALUE</span>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-[10px] font-bold text-emerald-deep/40">Rs.</span>
+                          <span className="font-heading font-bold text-2xl text-emerald-deep/80">{item.price}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center bg-white/80 backdrop-blur-sm rounded-full p-1 border border-emerald-deep/5 shadow-sm">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 rounded-full hover:bg-emerald-deep/5 text-emerald-deep disabled:opacity-30"
+                          onClick={() => updateCartQuantity(index, -1)}
+                          disabled={item.quantity <= 1}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <span className="font-heading font-bold text-emerald-deep min-w-[30px] text-center text-sm">{item.quantity}</span>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 rounded-full hover:bg-emerald-deep/5 text-emerald-deep"
+                          onClick={() => updateCartQuantity(index, 1)}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         </div>
 
         {/* Order Summary */}
-        <div className="w-full lg:w-[400px]">
-          <div className="bg-white p-8 md:p-10 rounded-[3.5rem] border border-emerald-deep/5 shadow-2xl lg:sticky lg:top-32 space-y-8">
-            <div className="space-y-2">
-              <h3 className="text-2xl font-heading font-bold text-emerald-deep italic">Order Summary</h3>
-              <p className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">Final Review</p>
+        <div className="w-full lg:w-[380px] lg:sticky lg:top-24">
+          <div className="bg-[#e5e5e0]/40 p-8 rounded-[2.5rem] border border-emerald-deep/5 shadow-xl space-y-8">
+            <div className="space-y-1">
+              <h3 className="text-2xl font-heading font-bold text-emerald-deep italic leading-none">Order Summary</h3>
+              <p className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">FINAL REVIEW</p>
             </div>
             
             <div className="space-y-4">
-              <div className="flex justify-between text-sm font-medium text-emerald-deep/60">
-                <span>Subtotal ({cart.length} items)</span>
-                <span>Rs. {totalAmount}</span>
-              </div>
-              <div className="flex justify-between text-sm font-medium text-emerald-deep/60">
-                <span>Delivery Fee</span>
-                <span className="text-emerald-500 font-bold uppercase tracking-widest text-[10px]">Complimentary</span>
-              </div>
-              
-              <div className="pt-6 border-t border-emerald-deep/5">
-                <div className="flex justify-between items-end">
-                  <div>
-                    <p className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">Total Amount</p>
-                    <p className="text-4xl font-heading font-bold text-emerald-deep">Rs. {totalAmount}</p>
+                <div className="flex justify-between text-sm font-medium text-emerald-deep/60">
+                  <span className="font-bold uppercase tracking-widest text-[10px]">Subtotal ({cart.length} items)</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-[10px] font-bold text-emerald-deep/40">Rs.</span>
+                    <span className="text-xl font-bold text-emerald-deep/70">{totalAmount}</span>
                   </div>
                 </div>
-              </div>
+                <div className="flex justify-between text-sm font-medium text-emerald-deep/60">
+                  <span className="font-bold uppercase tracking-widest text-[10px]">Delivery Fee</span>
+                  <span className="text-emerald-500 font-bold uppercase tracking-widest text-[10px]">COMPLIMENTARY</span>
+                </div>
+                
+                <div className="pt-6 border-t border-emerald-deep/5">
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <p className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">Total Amount</p>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-xs font-bold text-emerald-deep/40">Rs.</span>
+                        <span className="text-3xl font-heading font-bold text-emerald-deep tracking-tighter">{totalAmount}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               <Label className="text-[10px] font-bold text-emerald-deep uppercase tracking-widest ml-1">Payment Method</Label>
-              <div className="grid grid-cols-3 gap-3">
-                <Button 
-                  variant={paymentMethod === 'esewa' ? 'default' : 'outline'}
-                  className={`h-14 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all ${paymentMethod === 'esewa' ? 'bg-emerald-deep text-white shadow-lg' : 'border-emerald-deep/10 text-emerald-deep hover:bg-emerald-deep/5'}`}
-                  onClick={() => setPaymentMethod('esewa')}
-                >
-                  eSewa
-                </Button>
-                <Button 
-                  variant={paymentMethod === 'khalti' ? 'default' : 'outline'}
-                  className={`h-14 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all ${paymentMethod === 'khalti' ? 'bg-emerald-deep text-white shadow-lg' : 'border-emerald-deep/10 text-emerald-deep hover:bg-emerald-deep/5'}`}
-                  onClick={() => setPaymentMethod('khalti')}
-                >
-                  Khalti
-                </Button>
-                <Button 
-                  variant={paymentMethod === 'cod' ? 'default' : 'outline'}
-                  className={`h-14 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all ${paymentMethod === 'cod' ? 'bg-emerald-deep text-white shadow-lg' : 'border-emerald-deep/10 text-emerald-deep hover:bg-emerald-deep/5'}`}
-                  onClick={() => setPaymentMethod('cod')}
-                >
-                  COD
-                </Button>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: 'esewa', label: 'ESEWA' },
+                  { id: 'khalti', label: 'KHALTI' },
+                  { id: 'cod', label: 'COD' }
+                ].map((method) => (
+                  <Button 
+                    key={method.id}
+                    variant={paymentMethod === method.id ? 'default' : 'outline'}
+                    className={`h-12 rounded-xl text-[9px] font-bold uppercase tracking-widest transition-all ${paymentMethod === method.id ? 'bg-emerald-deep text-white shadow-lg' : 'border-emerald-deep/10 text-emerald-deep hover:bg-emerald-deep/5'}`}
+                    onClick={() => setPaymentMethod(method.id as any)}
+                  >
+                    {method.label}
+                  </Button>
+                ))}
               </div>
             </div>
 
             <Button 
-              className="w-full h-16 bg-emerald-deep text-white hover:bg-champagne rounded-2xl font-bold text-xs uppercase tracking-widest shadow-2xl shadow-emerald-deep/20 transition-all flex items-center justify-center gap-4 group"
+              className="w-full h-14 bg-[#064e3b] text-white hover:bg-[#064e3b]/90 rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-xl shadow-emerald-deep/20 transition-all flex items-center justify-center gap-3 group"
               onClick={() => onCheckout(paymentMethod)}
             >
               Place Artisan Order
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Button>
 
-            <p className="text-[9px] text-center text-emerald-deep/40 font-medium uppercase tracking-widest leading-relaxed">
-              Secure artisan checkout powered by <br/> <span className="text-emerald-deep font-bold">Artisan Bakery Network</span>
+            <p className="text-[8px] text-center text-emerald-deep/30 font-medium uppercase tracking-[0.2em] leading-relaxed">
+              SECURE ARTISAN CHECKOUT POWERED BY <br/> <span className="text-emerald-deep font-bold">ARTISAN BAKERY NETWORK</span>
             </p>
           </div>
         </div>
@@ -390,7 +396,7 @@ const CartPage = ({
   );
 };
 
-const BottomNav = ({ cartCount, onOpenCart, onOpenAuth, user, onOpenOrders, onOpenProfile, activeView, setView }: { 
+const BottomNav = ({ cartCount, onOpenCart, onOpenAuth, user, onOpenOrders, onOpenProfile, activeView, setView, isAdmin }: { 
   cartCount: number, 
   onOpenCart: () => void, 
   onOpenAuth: () => void, 
@@ -398,7 +404,8 @@ const BottomNav = ({ cartCount, onOpenCart, onOpenAuth, user, onOpenOrders, onOp
   onOpenOrders: () => void,
   onOpenProfile: () => void,
   activeView: string,
-  setView: (view: string) => void
+  setView: (view: string) => void,
+  isAdmin: boolean
 }) => {
   const NavItem = ({ icon: Icon, label, view, onClick, badge }: any) => {
     const isActive = activeView === view;
@@ -434,7 +441,11 @@ const BottomNav = ({ cartCount, onOpenCart, onOpenAuth, user, onOpenOrders, onOp
       <NavItem icon={HomeIcon} label="Home" view="home" onClick={() => { setView('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
       <NavItem icon={Grid} label="Collection" view="menu" onClick={() => { setView('home'); setTimeout(() => document.getElementById('cakes')?.scrollIntoView({ behavior: 'smooth' }), 100); }} />
       <NavItem icon={ShoppingCart} label="Basket" view="cart" badge={cartCount} />
-      <NavItem icon={Package} label="Orders" view="orders" onClick={() => user ? setView('orders') : onOpenAuth()} />
+      {isAdmin ? (
+        <NavItem icon={LayoutDashboard} label="Admin" view="admin" />
+      ) : (
+        <NavItem icon={Package} label="Orders" view="orders" onClick={() => user ? setView('orders') : onOpenAuth()} />
+      )}
       <NavItem icon={UserIcon} label="Account" view="profile" onClick={() => user ? setView('profile') : onOpenAuth()} />
     </div>
   );
@@ -490,7 +501,13 @@ const ProductCard: React.FC<{
             <h4 className="font-heading font-bold text-2xl text-emerald-deep leading-tight group-hover:text-champagne transition-colors">{product.name}</h4>
             <p className="text-[10px] text-emerald-deep/40 font-bold uppercase tracking-[0.2em]">{product.characteristics[0] || 'Artisan Creation'}</p>
           </div>
-          <span className="font-heading font-bold text-2xl text-champagne">Rs. {product.price}</span>
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] font-bold text-emerald-deep/20 uppercase tracking-[0.2em] leading-none">Value</span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-[10px] font-bold text-emerald-deep/30">Rs.</span>
+              <span className="font-heading font-bold text-base text-emerald-deep/40 tracking-tighter">{product.price}</span>
+            </div>
+          </div>
         </div>
         
         <p className="text-sm text-muted-foreground line-clamp-2 font-medium leading-relaxed">
@@ -604,7 +621,13 @@ const ProductDetailsPage = ({
           <div className="flex flex-col gap-6">
             <h1 className="text-6xl md:text-8xl font-heading font-bold text-emerald-deep tracking-tighter leading-[0.85] italic">{product.name}</h1>
             <div className="flex items-center gap-8 mt-6">
-              <span className="text-5xl font-heading font-bold text-champagne">Rs. {product.price}</span>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold text-emerald-deep/30 uppercase tracking-[0.4em] mb-1">Artisan Value</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-sm font-bold text-emerald-deep/40">Rs.</span>
+                  <span className="text-3xl font-heading font-bold text-emerald-deep/60 tracking-tighter">{product.price}</span>
+                </div>
+              </div>
               <div className="h-[1px] w-16 bg-emerald-deep/10" />
               <span className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-[0.4em]">Artisan Creation</span>
             </div>
@@ -847,6 +870,269 @@ const PaymentFailure = () => {
   );
 };
 
+const CartNotification = ({ product, isOpen }: { product: Product | null, isOpen: boolean }) => {
+  if (!product) return null;
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0, y: 50, scale: 0.9 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 20, scale: 0.9 }}
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-md"
+        >
+          <div className="bg-emerald-deep/95 backdrop-blur-xl border border-white/10 rounded-full p-2 pl-6 shadow-2xl flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center">
+                <ShoppingCart className="h-5 w-5 text-gold" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-white font-heading font-bold text-sm leading-tight">{product.name}</span>
+                <span className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Added to your collection</span>
+              </div>
+            </div>
+            <div className="h-10 w-10 rounded-full bg-gold flex items-center justify-center mr-1">
+              <CheckCircle2 className="h-5 w-5 text-emerald-deep" />
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+const AddToCartModal = ({ 
+  isOpen, 
+  onClose, 
+  product, 
+  onGoToCart 
+}: { 
+  isOpen: boolean, 
+  onClose: () => void, 
+  product: Product | null,
+  onGoToCart: () => void
+}) => {
+  if (!product) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[450px] rounded-[2.5rem] border-emerald-deep/5 shadow-2xl p-0 overflow-hidden">
+        <div className="bg-emerald-deep p-8 text-white text-center space-y-2">
+          <div className="h-16 w-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 className="h-8 w-8 text-gold" />
+          </div>
+          <h2 className="text-2xl font-heading font-bold italic">Added to Collection</h2>
+          <p className="text-white/60 text-[10px] font-bold uppercase tracking-[0.3em]">Exquisite choice, artisan</p>
+        </div>
+        
+        <div className="p-8 space-y-8">
+          <div className="flex items-center gap-6 bg-emerald-deep/5 p-4 rounded-3xl border border-emerald-deep/5">
+            <div className="h-20 w-20 rounded-2xl overflow-hidden shrink-0 border border-emerald-deep/10">
+              <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-heading font-bold text-emerald-deep text-lg leading-tight">{product.name}</h4>
+              <p className="text-[10px] text-emerald-deep/40 font-bold uppercase tracking-widest mt-1">{product.category}</p>
+              <div className="flex items-baseline gap-1 mt-2">
+                <span className="text-[10px] font-bold text-emerald-deep/40">Rs.</span>
+                <span className="font-heading font-bold text-lg text-emerald-deep/60">{product.price}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Button 
+              variant="outline" 
+              className="h-14 rounded-2xl border-emerald-deep/10 text-emerald-deep font-bold text-[10px] uppercase tracking-widest hover:bg-emerald-deep/5"
+              onClick={onClose}
+            >
+              Continue Shopping
+            </Button>
+            <Button 
+              className="h-14 rounded-2xl bg-emerald-deep text-white hover:bg-champagne font-bold text-[10px] uppercase tracking-widest shadow-xl shadow-emerald-deep/10"
+              onClick={onGoToCart}
+            >
+              View My Cart
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const AdminDashboard = ({ 
+  products, 
+  orders, 
+  onAddProduct, 
+  onEditProduct, 
+  onDeleteProduct, 
+  onToggleStock,
+  onUpdateOrderStatus,
+  onBack
+}: { 
+  products: Product[], 
+  orders: Order[], 
+  onAddProduct: () => void, 
+  onEditProduct: (p: Product) => void, 
+  onDeleteProduct: (id: string) => void,
+  onToggleStock: (id: string, inStock: boolean) => void,
+  onUpdateOrderStatus: (orderId: string, status: OrderStatus) => void,
+  onBack: () => void
+}) => {
+  return (
+    <div className="container mx-auto px-6 py-12 md:py-24 pb-48">
+      <div className="flex flex-col gap-12">
+        <div className="flex items-center justify-between mb-8">
+          <Button 
+            variant="ghost" 
+            className="text-emerald-deep font-bold flex items-center gap-4 hover:bg-emerald-deep/5 text-[10px] uppercase tracking-[0.4em]"
+            onClick={onBack}
+          >
+            <ChevronLeft className="h-4 w-4" /> Return to Shop
+          </Button>
+        </div>
+
+        <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-emerald-deep/10 pb-10 gap-8">
+          <div>
+            <h1 className="text-5xl md:text-7xl font-heading font-bold text-emerald-deep tracking-tighter italic">Admin Control Center</h1>
+            <p className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-[0.4em] mt-4">Manage your shop's heartbeat - orders and collections.</p>
+          </div>
+          <Button 
+            className="bg-emerald-deep text-white hover:bg-champagne rounded-full px-8 h-14 font-bold text-[10px] uppercase tracking-widest shadow-xl shadow-emerald-deep/20 transition-all flex items-center gap-3"
+            onClick={onAddProduct}
+          >
+            <Plus className="h-4 w-4" /> New Masterpiece
+          </Button>
+        </div>
+
+        <Tabs defaultValue="products" className="w-full">
+          <TabsList className="bg-emerald-deep/5 p-1 rounded-2xl mb-12 w-fit">
+            <TabsTrigger value="products" className="rounded-xl px-8 py-3 data-[state=active]:bg-white data-[state=active]:text-emerald-deep data-[state=active]:shadow-sm font-bold text-[10px] uppercase tracking-widest">Products</TabsTrigger>
+            <TabsTrigger value="orders" className="rounded-xl px-8 py-3 data-[state=active]:bg-white data-[state=active]:text-emerald-deep data-[state=active]:shadow-sm font-bold text-[10px] uppercase tracking-widest">Orders</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="products" className="space-y-8">
+            <div className="grid gap-6">
+              {products.map((product) => (
+                <div key={product.id} className="bg-white p-6 rounded-3xl border border-emerald-deep/5 shadow-sm flex flex-col md:flex-row items-center gap-8 group hover:shadow-xl transition-all duration-500">
+                  <div className="h-24 w-24 rounded-2xl overflow-hidden bg-muted shrink-0 border border-emerald-deep/5">
+                    <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                  </div>
+                  <div className="flex-1 space-y-1 text-center md:text-left">
+                    <h4 className="font-heading font-bold text-xl text-emerald-deep">{product.name}</h4>
+                    <p className="text-[10px] text-emerald-deep/40 font-bold uppercase tracking-widest">{product.category}</p>
+                    <div className="flex items-baseline gap-1 justify-center md:justify-start mt-2">
+                      <span className="text-[10px] font-bold text-emerald-deep/40">Rs.</span>
+                      <span className="font-heading font-bold text-lg text-emerald-deep/60">{product.price}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-4">
+                    <div className="flex items-center gap-3 bg-emerald-deep/5 px-4 py-2 rounded-full">
+                      <span className={`text-[10px] font-bold uppercase tracking-widest ${product.inStock ? 'text-emerald-500' : 'text-coral'}`}>
+                        {product.inStock ? 'In Stock' : 'Out of Stock'}
+                      </span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className={`h-8 px-4 rounded-full text-[9px] font-bold uppercase tracking-widest transition-all ${product.inStock ? 'bg-coral text-white hover:bg-coral/90' : 'bg-emerald-500 text-white hover:bg-emerald-600'}`}
+                        onClick={() => onToggleStock(product.id, !product.inStock)}
+                      >
+                        {product.inStock ? 'Mark Out' : 'Mark In'}
+                      </Button>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="h-12 w-12 rounded-full border-emerald-deep/10 text-emerald-deep hover:bg-emerald-deep hover:text-white"
+                      onClick={() => onEditProduct(product)}
+                    >
+                      <Edit3 className="h-5 w-5" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="h-12 w-12 rounded-full border-coral/10 text-coral hover:bg-coral hover:text-white"
+                      onClick={() => onDeleteProduct(product.id)}
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="orders" className="space-y-8">
+            <div className="grid gap-6">
+              {orders.map((order) => (
+                <div key={order.id} className="bg-white p-8 rounded-[2.5rem] border border-emerald-deep/5 shadow-sm space-y-6">
+                  <div className="flex flex-col md:flex-row justify-between gap-6 border-b border-emerald-deep/5 pb-6">
+                    <div>
+                      <h4 className="font-heading font-bold text-xl text-emerald-deep">Order #{order.id.slice(-6).toUpperCase()}</h4>
+                      <p className="text-[10px] text-emerald-deep/40 font-bold uppercase tracking-widest mt-1">Placed on {new Date(order.createdAt?.toDate?.() || order.createdAt).toLocaleDateString()}</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-4">
+                      <Badge className={`px-6 py-2 rounded-full font-bold text-[10px] uppercase tracking-widest border-none ${
+                        order.status === 'delivered' ? 'bg-emerald-500 text-white' :
+                        order.status === 'ready' ? 'bg-blue-500 text-white' :
+                        order.status === 'picked' ? 'bg-purple-500 text-white' :
+                        order.status === 'confirmed' ? 'bg-champagne text-white' :
+                        order.status === 'cancelled' ? 'bg-coral text-white' :
+                        'bg-emerald-deep/10 text-emerald-deep'
+                      }`}>
+                        {order.status}
+                      </Badge>
+                      <select 
+                        className="bg-emerald-deep/5 border-none rounded-full px-6 py-2 text-[10px] font-bold uppercase tracking-widest text-emerald-deep focus:ring-2 focus:ring-emerald-deep outline-none cursor-pointer"
+                        value={order.status}
+                        onChange={(e) => onUpdateOrderStatus(order.id, e.target.value as OrderStatus)}
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="picked">Picked</option>
+                        <option value="ready">Ready</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                      <h5 className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">Customer Details</h5>
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold text-emerald-deep">{order.deliveryDetails.fullName}</p>
+                        <p className="text-sm text-muted-foreground">{order.deliveryDetails.phone}</p>
+                        <p className="text-sm text-muted-foreground">{order.deliveryDetails.address}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <h5 className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">Order Items</h5>
+                      <div className="space-y-2">
+                        {order.items.map((item, i) => (
+                          <div key={i} className="flex justify-between text-sm">
+                            <span className="font-medium text-emerald-deep">{item.cakeName} x {item.quantity}</span>
+                            <span className="font-bold text-emerald-deep/60">Rs. {item.price * item.quantity}</span>
+                          </div>
+                        ))}
+                        <Separator className="bg-emerald-deep/5" />
+                        <div className="flex justify-between items-center pt-2">
+                          <span className="text-[10px] font-bold text-emerald-deep uppercase tracking-widest">Total Amount</span>
+                          <span className="text-xl font-heading font-bold text-champagne">Rs. {order.totalAmount}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -863,21 +1149,35 @@ export default function App() {
     phone: '',
     address: '',
     deliveryDate: new Date().toISOString().split('T')[0],
-    deliveryTime: '11:00'
+    deliveryTime: '11:00',
+    deliveryMethod: 'delivery'
   });
+  const [showCartNotification, setShowCartNotification] = useState(false);
+  const [notificationProduct, setNotificationProduct] = useState<Product | null>(null);
   const [activeTab, setActiveTab] = useState('all');
   const [activeView, setActiveView] = useState('home');
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Navigation sync
+  useEffect(() => {
+    if (location.pathname !== '/' && activeView !== 'home') {
+      navigate('/');
+    }
+  }, [activeView, location.pathname, navigate]);
   const [searchQuery, setSearchQuery] = useState('');
   const [orders, setOrders] = useState<Order[]>([]);
   const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
-  const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
   const [isOrdersOpen, setIsOrdersOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
+  const [isAddToCartModalOpen, setIsAddToCartModalOpen] = useState(false);
+  const [lastAddedProduct, setLastAddedProduct] = useState<Product | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'esewa' | 'khalti' | 'cod'>('cod');
   const [isProductFormOpen, setIsProductFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [productFormData, setProductFormData] = useState<Omit<Product, 'id'>>({
@@ -909,7 +1209,7 @@ export default function App() {
             role: isUserAdmin ? 'admin' : 'user'
           }, { merge: true });
         } catch (error) {
-          console.error('Error updating user profile:', error);
+          handleFirestoreError(error, OperationType.WRITE, `users/${u.uid}`);
         }
 
         // Fetch user profile for wishlist
@@ -1032,26 +1332,34 @@ export default function App() {
       quantity: quantity,
       cakeName: customDetails.name || selectedProduct.name,
       cakeDesign: customDetails.design || 'Standard',
-      price: selectedProduct.price
+      price: selectedProduct.price,
+      imageUrl: selectedProduct.imageUrl
     };
 
     setCart([...cart, newItem]);
     setIsDetailsModalOpen(false);
     setCustomDetails({ name: '', design: '' });
-    toast.success('Added to cart!');
+    setLastAddedProduct(selectedProduct);
+    setNotificationProduct(selectedProduct);
+    setShowCartNotification(true);
+    setTimeout(() => setShowCartNotification(false), 3000);
   };
 
-  const handlePageAddToCart = (product: Product, qty: number, custom: { name: string, design: string }) => {
+  const handlePageAddToCart = (product: Product, qty: number = 1, custom: { name: string, design: string } = { name: '', design: '' }) => {
     const newItem: OrderItem = {
       productId: product.id,
       quantity: qty,
       cakeName: custom.name || product.name,
       cakeDesign: custom.design || 'Standard',
-      price: product.price
+      price: product.price,
+      imageUrl: product.imageUrl
     };
 
     setCart([...cart, newItem]);
-    toast.success('Added to cart!');
+    setLastAddedProduct(product);
+    setNotificationProduct(product);
+    setShowCartNotification(true);
+    setTimeout(() => setShowCartNotification(false), 3000);
   };
 
   const removeFromCart = (index: number) => {
@@ -1073,11 +1381,12 @@ export default function App() {
 
   const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  const handleCheckout = () => {
+  const handleCheckout = (method?: 'esewa' | 'khalti' | 'cod') => {
     if (!user) {
       setIsAuthOpen(true);
       return;
     }
+    if (method) setPaymentMethod(method);
     setIsCartOpen(false);
     setIsOrderModalOpen(true);
   };
@@ -1105,8 +1414,7 @@ export default function App() {
       setOrderToCancel(null);
       toast.success('Order cancelled successfully');
     } catch (error) {
-      console.error('Error cancelling order:', error);
-      toast.error('Failed to cancel order');
+      handleFirestoreError(error, OperationType.UPDATE, `orders/${orderToCancel}`);
     }
   };
 
@@ -1133,8 +1441,7 @@ export default function App() {
         inStock: true
       });
     } catch (error) {
-      console.error('Error saving product:', error);
-      toast.error('Failed to save product');
+      handleFirestoreError(error, editingProduct ? OperationType.UPDATE : OperationType.CREATE, 'products');
     }
   };
 
@@ -1146,8 +1453,17 @@ export default function App() {
       await deleteDoc(doc(db, 'products', id));
       toast.success('Product deleted successfully');
     } catch (error) {
-      console.error('Error deleting product:', error);
-      toast.error('Failed to delete product');
+      handleFirestoreError(error, OperationType.DELETE, `products/${id}`);
+    }
+  };
+
+  const toggleStock = async (productId: string, inStock: boolean) => {
+    if (!isAdmin) return;
+    try {
+      await updateDoc(doc(db, 'products', productId), { inStock });
+      toast.success(`Product marked as ${inStock ? 'In Stock' : 'Out of Stock'}`);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `products/${productId}`);
     }
   };
 
@@ -1169,8 +1485,7 @@ export default function App() {
       });
       toast.success(wishlist.includes(productId) ? 'Removed from wishlist' : 'Added to wishlist');
     } catch (error) {
-      console.error('Error updating wishlist:', error);
-      toast.error('Failed to update wishlist');
+      handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}`);
     }
   };
 
@@ -1181,7 +1496,7 @@ export default function App() {
     const errors: { [key: string]: string } = {};
     if (!deliveryDetails.fullName.trim()) errors.fullName = 'Full Name is required';
     if (!deliveryDetails.phone.trim()) errors.phone = 'Phone Number is required';
-    if (!deliveryDetails.address.trim()) errors.address = 'Delivery Address is required';
+    if (deliveryDetails.deliveryMethod !== 'pickup' && !deliveryDetails.address.trim()) errors.address = 'Delivery Address is required';
 
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
@@ -1292,8 +1607,7 @@ export default function App() {
       setIsOrderModalOpen(false);
       setIsCartOpen(false);
     } catch (error) {
-      console.error('Payment processing error:', error);
-      toast.error('Something went wrong with the payment initiation.');
+      handleFirestoreError(error, OperationType.CREATE, 'orders');
     }
   };
 
@@ -1342,26 +1656,53 @@ export default function App() {
   }, [products, activeTab, searchQuery]);
 
   return (
-    <Router>
-      <div className="min-h-screen bg-[#fcfaf2] font-sans antialiased pb-24 md:pb-0 overflow-x-hidden">
+    <div className="min-h-screen bg-[#fcfaf2] font-sans antialiased flex flex-col">
         <Toaster position="bottom-center" />
         
         <Navbar 
           user={user} 
           cartCount={cart.length} 
-          onOpenCart={() => setActiveView('cart')}
+          onOpenCart={() => {
+            setActiveView('cart');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
           onOpenAuth={() => setIsAuthOpen(true)}
           onSignOut={handleSignOut}
           isAdmin={isAdmin}
-          onOpenAdmin={() => setIsAdminDashboardOpen(true)}
-          onOpenOrders={() => setActiveView('orders')}
-          onOpenProfile={() => setActiveView('profile')}
+          onOpenAdmin={() => {
+            setActiveView('admin');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onOpenOrders={() => {
+            setActiveView('orders');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onOpenProfile={() => {
+            setActiveView('profile');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
           setView={setActiveView}
+        />
+
+        <CartNotification 
+          isOpen={showCartNotification}
+          product={notificationProduct}
+        />
+
+        <AddToCartModal 
+          isOpen={isAddToCartModalOpen}
+          onClose={() => setIsAddToCartModalOpen(false)}
+          product={lastAddedProduct}
+          onGoToCart={() => {
+            setIsAddToCartModalOpen(false);
+            setActiveView('cart');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
         />
         
         <Routes>
           <Route path="/" element={
-            <main className="container mx-auto px-4 py-8 min-h-screen pb-32">
+            <main className={`${activeView === 'admin' ? 'w-full' : 'container mx-auto px-4'} py-8 flex-1 flex flex-col`}>
               <AnimatePresence mode="wait">
                 {activeView === 'home' && (
                   <motion.div
@@ -1526,6 +1867,8 @@ export default function App() {
                       setCart([]);
                       toast.success('Cart cleared');
                     }}
+                    paymentMethod={paymentMethod}
+                    setPaymentMethod={setPaymentMethod}
                   />
                 )}
 
@@ -1561,7 +1904,7 @@ export default function App() {
                       
                       <div className="grid gap-3">
                         {isAdmin && (
-                          <Button variant="outline" className="justify-start gap-4 h-14 rounded-2xl border-maroon/10 hover:bg-maroon/5 hover:text-maroon text-base font-semibold" onClick={() => setIsAdminDashboardOpen(true)}>
+                          <Button variant="outline" className="justify-start gap-4 h-14 rounded-2xl border-maroon/10 hover:bg-maroon/5 hover:text-maroon text-base font-semibold" onClick={() => setActiveView('admin')}>
                             <LayoutDashboard className="h-5 w-5 text-gold" /> Admin Dashboard
                           </Button>
                         )}
@@ -1781,6 +2124,50 @@ export default function App() {
                     </div>
                   </motion.div>
                 )}
+
+                {activeView === 'admin' && isAdmin && (
+                  <motion.div
+                    key="admin"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                  >
+                    <AdminDashboard 
+                      products={products}
+                      orders={allOrders}
+                      onAddProduct={() => {
+                        setEditingProduct(null);
+                        setProductFormData({
+                          name: '',
+                          description: '',
+                          price: 0,
+                          category: 'Birthday',
+                          imageUrl: '',
+                          characteristics: [],
+                          inStock: true
+                        });
+                        setIsProductFormOpen(true);
+                      }}
+                      onEditProduct={(p) => {
+                        setEditingProduct(p);
+                        setProductFormData({
+                          name: p.name,
+                          description: p.description,
+                          price: p.price,
+                          category: p.category,
+                          imageUrl: p.imageUrl,
+                          characteristics: p.characteristics,
+                          inStock: p.inStock
+                        });
+                        setIsProductFormOpen(true);
+                      }}
+                      onDeleteProduct={handleDeleteProduct}
+                      onToggleStock={toggleStock}
+                      onUpdateOrderStatus={updateOrderStatus}
+                      onBack={() => setActiveView('home')}
+                    />
+                  </motion.div>
+                )}
               </AnimatePresence>
             </main>
           } />
@@ -1814,15 +2201,27 @@ export default function App() {
                 </nav>
 
                 <div className="flex gap-8">
-                  <a href="#" className="h-14 w-14 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-gold hover:border-gold hover:text-maroon transition-all duration-500">
+                  <a href="tel:+9779800000000" className="h-14 w-14 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-gold hover:border-gold hover:text-maroon transition-all duration-500">
                     <Phone className="h-5 w-5" strokeWidth={1.5} />
                   </a>
-                  <a href="#" className="h-14 w-14 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-gold hover:border-gold hover:text-maroon transition-all duration-500">
+                  <a href="https://maps.app.goo.gl/H9sazuEJS5RE7i5K9" target="_blank" rel="noopener noreferrer" className="h-14 w-14 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-gold hover:border-gold hover:text-maroon transition-all duration-500">
                     <MapPin className="h-5 w-5" strokeWidth={1.5} />
                   </a>
                   <a href="#" className="h-14 w-14 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-gold hover:border-gold hover:text-maroon transition-all duration-500">
                     <Clock className="h-5 w-5" strokeWidth={1.5} />
                   </a>
+                </div>
+
+                <div className="w-full max-w-2xl rounded-3xl overflow-hidden border border-white/5 h-64 shadow-2xl">
+                  <iframe 
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d601.7841111984694!2d80.12693025383912!3d28.96202918741089!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39a1ab006ca049cd%3A0xdae0567f45a5bbf4!2skoseli%20cake%20shop!5e0!3m2!1sen!2sus!4v1776066286313!5m2!1sen!2sus" 
+                    width="100%" 
+                    height="100%" 
+                    style={{ border: 0 }} 
+                    allowFullScreen={true} 
+                    loading="lazy" 
+                    referrerPolicy="no-referrer-when-downgrade"
+                  ></iframe>
                 </div>
 
                 <div className="w-full max-w-4xl">
@@ -1850,6 +2249,7 @@ export default function App() {
           onOpenProfile={() => setActiveView('profile')}
           activeView={activeView}
           setView={setActiveView}
+          isAdmin={isAdmin}
         />
       )}
 
@@ -1969,10 +2369,29 @@ export default function App() {
             <DialogTitle>Delivery Details</DialogTitle>
             <DialogDescription>Please provide your delivery information.</DialogDescription>
           </DialogHeader>
-          <ScrollArea className="flex-1">
-            <div className="grid gap-4 py-4 pr-4">
+          <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+            <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="fullName">Full Name</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-maroon/60">Delivery Method</Label>
+                <div className="flex gap-2 p-1 bg-maroon/5 rounded-2xl border border-maroon/5">
+                  <Button 
+                    variant="ghost"
+                    className={`flex-1 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all h-10 ${deliveryDetails.deliveryMethod === 'delivery' ? 'bg-white text-maroon shadow-sm' : 'text-maroon/40 hover:text-maroon'}`}
+                    onClick={() => setDeliveryDetails({...deliveryDetails, deliveryMethod: 'delivery'})}
+                  >
+                    <Truck className="h-3 w-3 mr-2" /> Delivery
+                  </Button>
+                  <Button 
+                    variant="ghost"
+                    className={`flex-1 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all h-10 ${deliveryDetails.deliveryMethod === 'pickup' ? 'bg-white text-maroon shadow-sm' : 'text-maroon/40 hover:text-maroon'}`}
+                    onClick={() => setDeliveryDetails({...deliveryDetails, deliveryMethod: 'pickup'})}
+                  >
+                    <MapPin className="h-3 w-3 mr-2" /> Shop Pickup
+                  </Button>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="fullName" className="text-[10px] font-bold uppercase tracking-widest text-maroon/60">Full Name</Label>
                 <Input 
                   id="fullName" 
                   value={deliveryDetails.fullName}
@@ -1980,12 +2399,12 @@ export default function App() {
                     setDeliveryDetails({...deliveryDetails, fullName: e.target.value});
                     if (formErrors.fullName) setFormErrors({...formErrors, fullName: ''});
                   }}
-                  className={formErrors.fullName ? "border-red-500" : ""}
+                  className={`rounded-xl border-maroon/10 focus:ring-maroon ${formErrors.fullName ? "border-red-500" : ""}`}
                 />
                 {formErrors.fullName && <p className="text-red-500 text-[10px] font-bold uppercase tracking-wider">{formErrors.fullName}</p>}
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="phone">Phone Number</Label>
+                <Label htmlFor="phone" className="text-[10px] font-bold uppercase tracking-widest text-maroon/60">Phone Number</Label>
                 <Input 
                   id="phone" 
                   value={deliveryDetails.phone}
@@ -1993,30 +2412,53 @@ export default function App() {
                     setDeliveryDetails({...deliveryDetails, phone: e.target.value});
                     if (formErrors.phone) setFormErrors({...formErrors, phone: ''});
                   }}
-                  className={formErrors.phone ? "border-red-500" : ""}
+                  className={`rounded-xl border-maroon/10 focus:ring-maroon ${formErrors.phone ? "border-red-500" : ""}`}
                 />
                 {formErrors.phone && <p className="text-red-500 text-[10px] font-bold uppercase tracking-wider">{formErrors.phone}</p>}
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="address">Delivery Address</Label>
-                <Input 
-                  id="address" 
-                  placeholder="e.g. Airy Chauraha, House No. 12"
-                  value={deliveryDetails.address}
-                  onChange={(e) => {
-                    setDeliveryDetails({...deliveryDetails, address: e.target.value});
-                    if (formErrors.address) setFormErrors({...formErrors, address: ''});
-                  }}
-                  className={formErrors.address ? "border-red-500" : ""}
-                />
-                {formErrors.address && <p className="text-red-500 text-[10px] font-bold uppercase tracking-wider">{formErrors.address}</p>}
+                <Label htmlFor="address" className="text-[10px] font-bold uppercase tracking-widest text-maroon/60">
+                  {deliveryDetails.deliveryMethod === 'pickup' ? 'Pickup Location' : 'Delivery Address'}
+                </Label>
+                {deliveryDetails.deliveryMethod === 'pickup' ? (
+                  <div className="space-y-3">
+                    <div className="p-4 bg-maroon/5 rounded-xl border border-maroon/10 text-xs text-maroon leading-relaxed">
+                      <p className="font-bold mb-1">Koseli Artisan Bakery</p>
+                      <p className="opacity-70">Airy Chauraha, Dhangadhi, Nepal</p>
+                      <p className="opacity-70 mt-1">Contact: +977-9800000000</p>
+                    </div>
+                    <div className="rounded-xl overflow-hidden border border-maroon/10 h-40 w-full shadow-inner">
+                      <iframe 
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d601.7841111984694!2d80.12693025383912!3d28.96202918741089!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39a1ab006ca049cd%3A0xdae0567f45a5bbf4!2skoseli%20cake%20shop!5e0!3m2!1sen!2sus!4v1776066286313!5m2!1sen!2sus" 
+                        width="100%" 
+                        height="100%" 
+                        style={{ border: 0 }} 
+                        allowFullScreen={true} 
+                        loading="lazy" 
+                        referrerPolicy="no-referrer-when-downgrade"
+                      ></iframe>
+                    </div>
+                  </div>
+                ) : (
+                  <Input 
+                    id="address" 
+                    placeholder="e.g. Airy Chauraha, House No. 12"
+                    value={deliveryDetails.address}
+                    onChange={(e) => {
+                      setDeliveryDetails({...deliveryDetails, address: e.target.value});
+                      if (formErrors.address) setFormErrors({...formErrors, address: ''});
+                    }}
+                    className={`rounded-xl border-maroon/10 focus:ring-maroon ${formErrors.address ? "border-red-500" : ""}`}
+                  />
+                )}
+                {formErrors.address && deliveryDetails.deliveryMethod !== 'pickup' && <p className="text-red-500 text-[10px] font-bold uppercase tracking-wider">{formErrors.address}</p>}
               </div>
               <div className="grid gap-4">
-                <Label>Delivery Date</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-maroon/60">Delivery Date</Label>
                 <div className="flex gap-2">
                   <Button 
                     variant={deliveryDetails.deliveryDate === new Date().toISOString().split('T')[0] ? "default" : "outline"}
-                    className="flex-1 bg-maroon text-white hover:bg-maroon/90"
+                    className={`flex-1 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all ${deliveryDetails.deliveryDate === new Date().toISOString().split('T')[0] ? 'bg-maroon text-white shadow-lg' : 'border-maroon/10 text-maroon hover:bg-maroon/5'}`}
                     onClick={() => {
                       const today = new Date().toISOString().split('T')[0];
                       setDeliveryDetails({...deliveryDetails, deliveryDate: today});
@@ -2026,7 +2468,7 @@ export default function App() {
                   </Button>
                   <Button 
                     variant={deliveryDetails.deliveryDate === new Date(Date.now() + 86400000).toISOString().split('T')[0] ? "default" : "outline"}
-                    className="flex-1 border-maroon/20 text-maroon hover:bg-maroon/5"
+                    className={`flex-1 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all ${deliveryDetails.deliveryDate === new Date(Date.now() + 86400000).toISOString().split('T')[0] ? 'bg-maroon text-white shadow-lg' : 'border-maroon/10 text-maroon hover:bg-maroon/5'}`}
                     onClick={() => {
                       const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
                       setDeliveryDetails({...deliveryDetails, deliveryDate: tomorrow});
@@ -2067,7 +2509,7 @@ export default function App() {
               </div>
 
               <div className="grid gap-3">
-                <Label>Delivery Time</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-maroon/60">Delivery Time</Label>
                 <div className="grid grid-cols-3 gap-2">
                   {['09:00', '11:00', '13:00', '15:00', '17:00', '19:00'].map((time) => {
                     const isSelected = deliveryDetails.deliveryTime === time;
@@ -2080,9 +2522,9 @@ export default function App() {
                       <Button
                         key={time}
                         variant={isSelected ? "default" : "outline"}
-                        className={`h-10 text-xs font-bold rounded-lg ${
+                        className={`h-10 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all ${
                           isSelected 
-                          ? 'bg-gold text-white hover:bg-gold/90' 
+                          ? 'bg-gold text-white hover:bg-gold/90 shadow-md' 
                           : 'border-maroon/10 text-maroon hover:bg-maroon/5'
                         }`}
                         onClick={() => {
@@ -2097,45 +2539,45 @@ export default function App() {
               </div>
               
               <div className="bg-maroon/5 p-5 rounded-2xl space-y-3 mt-4 border border-maroon/10">
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-maroon/60">
                   <span>Items ({cart.length})</span>
                   <span>Rs. {totalAmount}</span>
                 </div>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>Delivery Fee</span>
-                  <span className="text-green-600 font-bold">FREE</span>
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-maroon/60">
+                  <span>{deliveryDetails.deliveryMethod === 'pickup' ? 'Pickup' : 'Delivery Fee'}</span>
+                  <span className="text-green-600 font-bold">{deliveryDetails.deliveryMethod === 'pickup' ? 'AT SHOP' : 'FREE'}</span>
                 </div>
                 <Separator className="bg-maroon/10" />
                 <div className="flex items-center justify-between font-bold text-maroon">
-                  <span className="text-base">Grand Total</span>
-                  <span className="text-xl">Rs. {totalAmount}</span>
+                  <span className="text-xs uppercase tracking-widest">Grand Total</span>
+                  <span className="text-xl font-heading italic">Rs. {totalAmount}</span>
                 </div>
               </div>
               
-              <Separator className="my-2" />
-              <h4 className="font-bold text-maroon text-sm uppercase tracking-widest">Select Payment Method</h4>
-              <div className="grid grid-cols-2 gap-4">
+              <Separator className="my-2 bg-maroon/10" />
+              <h4 className="font-bold text-maroon text-[10px] uppercase tracking-[0.2em] mb-2">Select Payment Method</h4>
+              <div className="grid grid-cols-2 gap-4 pb-8">
                 <Button variant="outline" className="h-24 flex-col gap-3 rounded-2xl border-maroon/10 hover:border-maroon/30 hover:bg-maroon/5 transition-all group" onClick={() => processPayment('esewa')}>
                   <div className="h-10 w-16 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
                     <img src="https://picsum.photos/seed/esewa/40/40" alt="eSewa" className="h-6 rounded" />
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-wider">eSewa</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest">eSewa</span>
                 </Button>
                 <Button variant="outline" className="h-24 flex-col gap-3 rounded-2xl border-maroon/10 hover:border-maroon/30 hover:bg-maroon/5 transition-all group" onClick={() => processPayment('khalti')}>
                   <div className="h-10 w-16 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
                     <img src="https://picsum.photos/seed/khalti/40/40" alt="Khalti" className="h-6 rounded" />
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-wider">Khalti</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Khalti</span>
                 </Button>
                 <Button variant="outline" className="h-24 flex-col gap-3 rounded-2xl border-maroon/10 hover:border-maroon/30 hover:bg-maroon/5 transition-all group col-span-2" onClick={() => processPayment('cod')}>
                   <div className="h-10 w-16 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
                     <Truck className="h-6 w-6 text-maroon" />
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-wider">Cash on Delivery (COD)</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Cash on Delivery (COD)</span>
                 </Button>
               </div>
             </div>
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -2158,7 +2600,7 @@ export default function App() {
                 </div>
                 <div className="grid gap-3">
                   {isAdmin && (
-                    <Button variant="outline" className="justify-start gap-3 h-12 rounded-xl border-maroon/10 hover:bg-maroon/5 hover:text-maroon" onClick={() => { setIsAdminDashboardOpen(true); setIsProfileOpen(false); }}>
+                    <Button variant="outline" className="justify-start gap-3 h-12 rounded-xl border-maroon/10 hover:bg-maroon/5 hover:text-maroon" onClick={() => { setActiveView('admin'); setIsProfileOpen(false); }}>
                       <LayoutDashboard className="h-5 w-5 text-gold" /> Admin Dashboard
                     </Button>
                   )}
@@ -2273,205 +2715,6 @@ export default function App() {
         </DialogContent>
       </Dialog>
 
-      {/* Admin Dashboard Dialog */}
-      <Dialog open={isAdminDashboardOpen} onOpenChange={setIsAdminDashboardOpen}>
-        <DialogContent className="sm:max-w-[95vw] max-h-[95vh] overflow-hidden flex flex-col rounded-3xl border-maroon/10">
-          <DialogHeader className="px-6 pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <DialogTitle className="text-2xl font-heading text-maroon font-bold">Admin Control Center</DialogTitle>
-                <DialogDescription>Manage your shop's heartbeat - orders and collections.</DialogDescription>
-              </div>
-              <div className="h-12 w-12 rounded-2xl bg-gold/10 flex items-center justify-center">
-                <LayoutDashboard className="h-6 w-6 text-maroon" />
-              </div>
-            </div>
-          </DialogHeader>
-
-          <Tabs defaultValue="orders" className="flex-1 flex flex-col overflow-hidden mt-6">
-            <div className="px-8">
-              <TabsList className="grid w-full grid-cols-2 bg-emerald-deep/5 p-1.5 rounded-3xl h-14">
-                <TabsTrigger value="orders" className="rounded-2xl font-bold uppercase tracking-widest text-[10px] data-[state=active]:bg-white data-[state=active]:text-emerald-deep data-[state=active]:shadow-lg transition-all">
-                  <Package className="h-4 w-4 mr-2" /> Live Orders
-                </TabsTrigger>
-                <TabsTrigger value="products" className="rounded-2xl font-bold uppercase tracking-widest text-[10px] data-[state=active]:bg-white data-[state=active]:text-emerald-deep data-[state=active]:shadow-lg transition-all">
-                  <Grid className="h-4 w-4 mr-2" /> Product Catalog
-                </TabsTrigger>
-              </TabsList>
-            </div>
-
-            <TabsContent value="orders" className="flex-1 overflow-hidden mt-0">
-              <ScrollArea className="h-full px-8 py-8">
-                <div className="grid gap-8">
-                  {allOrders.length === 0 ? (
-                    <div className="text-center py-24 bg-emerald-deep/5 rounded-[3rem] border border-dashed border-emerald-deep/10">
-                      <Package className="h-16 w-16 text-emerald-deep/20 mx-auto mb-6" strokeWidth={1} />
-                      <p className="text-emerald-deep font-heading font-bold text-xl">No orders yet</p>
-                      <p className="text-emerald-deep/40 text-[10px] font-bold uppercase tracking-widest mt-2">Waiting for your first artisan request</p>
-                    </div>
-                  ) : (
-                    allOrders.map((order) => (
-                      <Card key={order.id} className="overflow-hidden border-emerald-deep/5 shadow-sm hover:shadow-xl transition-all duration-500 rounded-[2.5rem] bg-white">
-                        <div className="bg-emerald-deep/5 px-8 py-5 flex items-center justify-between border-b border-emerald-deep/5">
-                          <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-                              <Package className="h-5 w-5 text-emerald-deep" />
-                            </div>
-                            <div>
-                              <p className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">Order ID</p>
-                              <p className="text-sm font-bold text-emerald-deep font-mono">#{order.id.slice(-8).toUpperCase()}</p>
-                            </div>
-                          </div>
-                          <Badge className={`${
-                            order.status === 'delivered' ? 'bg-emerald-500' : 
-                            order.status === 'confirmed' ? 'bg-blue-500' : 
-                            order.status === 'cancelled' ? 'bg-red-500' : 'bg-champagne'
-                          } text-white border-none font-bold text-[9px] uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg`}>
-                            {order.status}
-                          </Badge>
-                        </div>
-                        <CardContent className="p-8">
-                          <div className="grid md:grid-cols-2 gap-10">
-                            <div className="space-y-6">
-                              <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">
-                                <ShoppingCart className="h-3 w-3" /> Order Items
-                              </div>
-                              <div className="space-y-4">
-                                {order.items.map((item: any, idx: number) => (
-                                  <div key={idx} className="flex items-center justify-between group">
-                                    <div className="flex items-center gap-4">
-                                      <div className="h-12 w-12 rounded-xl bg-muted overflow-hidden border border-emerald-deep/5">
-                                        <img src={item.imageUrl} alt={item.cakeName} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
-                                      </div>
-                                      <div>
-                                        <p className="text-sm font-bold text-emerald-deep group-hover:text-champagne transition-colors">{item.cakeName}</p>
-                                        <p className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">Qty: {item.quantity}</p>
-                                      </div>
-                                    </div>
-                                    <span className="text-sm font-bold text-emerald-deep">Rs. {item.price * item.quantity}</span>
-                                  </div>
-                                ))}
-                                <div className="pt-4 border-t border-emerald-deep/5 flex justify-between items-center">
-                                  <span className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">Total Amount</span>
-                                  <span className="text-2xl font-heading font-bold text-champagne">Rs. {order.totalAmount}</span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="space-y-6">
-                              <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">
-                                <MapPin className="h-3 w-3" /> Delivery Details
-                              </div>
-                              <div className="bg-emerald-deep/5 p-6 rounded-3xl space-y-3">
-                                <p className="text-base font-bold text-emerald-deep">{order.deliveryDetails.fullName}</p>
-                                <p className="text-sm font-medium text-emerald-deep/60">{order.deliveryDetails.phone}</p>
-                                <p className="text-sm font-medium text-emerald-deep/60 leading-relaxed">{order.deliveryDetails.address}</p>
-                                <div className="flex items-center gap-4 mt-4 pt-4 border-t border-emerald-deep/10">
-                                  <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-deep">
-                                    <Calendar className="h-3.5 w-3.5 text-champagne" /> {new Date(order.deliveryDetails.deliveryDate).toLocaleDateString()}
-                                  </div>
-                                  <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-deep">
-                                    <Clock className="h-3.5 w-3.5 text-champagne" /> {order.deliveryDetails.deliveryTime}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                        <CardFooter className="bg-emerald-deep/[0.02] border-t border-emerald-deep/5 p-6 flex flex-wrap gap-3">
-                          <Button size="sm" variant="outline" className="rounded-2xl font-bold text-[10px] uppercase tracking-widest border-emerald-deep/10 text-emerald-deep hover:bg-emerald-deep hover:text-white transition-all h-10 px-6" onClick={() => updateOrderStatus(order.id, 'confirmed')} disabled={order.status === 'confirmed' || order.status === 'cancelled'}>Confirm</Button>
-                          <Button size="sm" variant="outline" className="rounded-2xl font-bold text-[10px] uppercase tracking-widest border-emerald-deep/10 text-emerald-deep hover:bg-emerald-deep hover:text-white transition-all h-10 px-6" onClick={() => updateOrderStatus(order.id, 'picked')} disabled={order.status === 'picked' || order.status === 'cancelled'}>Picked</Button>
-                          <Button size="sm" variant="outline" className="rounded-2xl font-bold text-[10px] uppercase tracking-widest border-emerald-deep/10 text-emerald-deep hover:bg-emerald-deep hover:text-white transition-all h-10 px-6" onClick={() => updateOrderStatus(order.id, 'ready')} disabled={order.status === 'ready' || order.status === 'cancelled'}>Ready</Button>
-                          <Button size="sm" variant="outline" className="rounded-2xl font-bold text-[10px] uppercase tracking-widest border-emerald-deep/10 text-emerald-deep hover:bg-emerald-deep hover:text-white transition-all h-10 px-6" onClick={() => updateOrderStatus(order.id, 'delivered')} disabled={order.status === 'delivered' || order.status === 'cancelled'}>Delivered</Button>
-                        </CardFooter>
-                      </Card>
-                    ))
-                  )}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-
-            <TabsContent value="products" className="flex-1 overflow-hidden mt-0">
-              <div className="h-full flex flex-col">
-                <div className="px-8 py-6 border-b border-emerald-deep/5 flex items-center justify-between bg-white">
-                  <div>
-                    <h3 className="text-xl font-heading font-bold text-emerald-deep">Collection Management</h3>
-                    <p className="text-[10px] font-bold text-champagne uppercase tracking-[0.2em] mt-1">Control your artisan inventory</p>
-                  </div>
-                  <Button className="bg-emerald-deep hover:bg-champagne text-white rounded-2xl font-bold text-[10px] uppercase tracking-widest h-12 px-8 shadow-xl shadow-emerald-deep/10 transition-all" onClick={() => {
-                    setEditingProduct(null);
-                    setProductFormData({
-                      name: '',
-                      description: '',
-                      price: 0,
-                      category: 'Birthday',
-                      imageUrl: '',
-                      characteristics: [],
-                      inStock: true
-                    });
-                    setIsProductFormOpen(true);
-                  }}>
-                    <Plus className="h-4 w-4 mr-2" /> New Masterpiece
-                  </Button>
-                </div>
-                <ScrollArea className="flex-1 p-8">
-                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {products.map((product) => (
-                      <Card key={product.id} className={`overflow-hidden border-emerald-deep/5 shadow-sm hover:shadow-xl transition-all duration-500 rounded-3xl ${!product.inStock ? 'bg-muted/30' : 'bg-white'}`}>
-                        <div className="aspect-video relative overflow-hidden">
-                          <img src={product.imageUrl} alt={product.name} className={`h-full w-full object-cover transition-transform group-hover:scale-110 duration-700 ${!product.inStock ? 'grayscale opacity-50' : ''}`} referrerPolicy="no-referrer" />
-                          <div className="absolute top-4 right-4 flex gap-2">
-                            <Button size="icon" variant="secondary" className="h-10 w-10 rounded-full bg-white/90 backdrop-blur shadow-lg hover:bg-emerald-deep hover:text-white transition-all" onClick={() => {
-                              setEditingProduct(product);
-                              setProductFormData({
-                                name: product.name,
-                                description: product.description,
-                                price: product.price,
-                                category: product.category,
-                                imageUrl: product.imageUrl,
-                                characteristics: product.characteristics,
-                                inStock: product.inStock
-                              });
-                              setIsProductFormOpen(true);
-                            }}>
-                              <Edit3 className="h-4 w-4" />
-                            </Button>
-                            <Button size="icon" variant="destructive" className="h-10 w-10 rounded-full shadow-lg" onClick={() => handleDeleteProduct(product.id)}>
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <div className="absolute bottom-4 left-4 flex gap-2">
-                            <Badge className="bg-emerald-deep/80 backdrop-blur text-[9px] font-bold uppercase tracking-widest border-none px-3 py-1 rounded-full">{product.category}</Badge>
-                            {!product.inStock && (
-                              <Badge className="bg-coral text-white text-[9px] font-bold uppercase tracking-widest border-none px-3 py-1 rounded-full">Out of Stock</Badge>
-                            )}
-                          </div>
-                        </div>
-                        <CardContent className="p-6">
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-heading font-bold text-lg text-emerald-deep truncate">{product.name}</h4>
-                              <p className="text-xl font-bold text-champagne mt-1">Rs. {product.price}</p>
-                            </div>
-                            <Button 
-                              size="sm" 
-                              variant={product.inStock ? "outline" : "default"}
-                              className={`h-9 px-4 rounded-full text-[9px] font-bold uppercase tracking-widest transition-all ${product.inStock ? 'border-emerald-deep/10 text-emerald-deep hover:bg-emerald-deep hover:text-white' : 'bg-emerald-deep text-white hover:bg-champagne'}`}
-                              onClick={() => updateDoc(doc(db, 'products', product.id), { inStock: !product.inStock })}
-                            >
-                              {product.inStock ? 'Mark OOS' : 'Mark In Stock'}
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </DialogContent>
-      </Dialog>
-
       {/* Product Form Dialog */}
       <Dialog open={isProductFormOpen} onOpenChange={setIsProductFormOpen}>
         <DialogContent className="sm:max-w-[500px] rounded-3xl border-maroon/10">
@@ -2533,6 +2776,5 @@ export default function App() {
         </DialogContent>
       </Dialog>
       </div>
-    </Router>
   );
 }

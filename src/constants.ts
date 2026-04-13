@@ -15,7 +15,7 @@ export const INITIAL_PRODUCTS: Omit<Product, 'id'>[] = [
     description: "Traditional buttermilk sponge with Madagascar vanilla bean cream cheese.",
     price: 2800,
     category: "Anniversary",
-    imageUrl: "https://images.unsplash.com/photo-1586788680434-30d324671ff6?auto=format&fit=crop&q=80&w=1200",
+    imageUrl: "https://images.unsplash.com/photo-1616541823729-00fe0aacd32c?auto=format&fit=crop&q=80&w=1200",
     characteristics: ["Vanilla Bean", "Premium Velvet", "Hand-piped Decor"],
     inStock: true
   },
@@ -24,7 +24,7 @@ export const INITIAL_PRODUCTS: Omit<Product, 'id'>[] = [
     description: "Light chiffon sponge with hand-picked seasonal fruits and chantilly cream.",
     price: 2200,
     category: "Birthday",
-    imageUrl: "https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&q=80&w=1200",
+    imageUrl: "https://images.unsplash.com/photo-1535141192574-5d4897c12636?auto=format&fit=crop&q=80&w=1200",
     characteristics: ["Seasonal Fruits", "Organic Cream", "Feather Light"],
     inStock: true
   },
@@ -33,7 +33,7 @@ export const INITIAL_PRODUCTS: Omit<Product, 'id'>[] = [
     description: "Salted caramel and roasted hazelnut praline with brown butter cream.",
     price: 2600,
     category: "Birthday",
-    imageUrl: "https://images.unsplash.com/photo-1557925923-33b27f891f88?auto=format&fit=crop&q=80&w=1200",
+    imageUrl: "https://images.unsplash.com/photo-1558301211-0d8c8ddee6ec?auto=format&fit=crop&q=80&w=1200",
     characteristics: ["Roasted Hazelnuts", "Salted Caramel", "Signature Crunch"],
     inStock: true
   },
@@ -42,7 +42,7 @@ export const INITIAL_PRODUCTS: Omit<Product, 'id'>[] = [
     description: "Classic white chocolate and raspberry coulis with elegant fondant finish.",
     price: 4500,
     category: "Wedding",
-    imageUrl: "https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?auto=format&fit=crop&q=80&w=1200",
+    imageUrl: "https://images.unsplash.com/photo-1535254973040-607b474cb844?auto=format&fit=crop&q=80&w=1200",
     characteristics: ["Raspberry Coulis", "Silk Fondant", "Bespoke Design"],
     inStock: true
   },
@@ -51,7 +51,7 @@ export const INITIAL_PRODUCTS: Omit<Product, 'id'>[] = [
     description: "Hand-crafted silk finish celebratory headwear for distinguished guests.",
     price: 450,
     category: "Accessories",
-    imageUrl: "https://images.unsplash.com/photo-1530103043960-ef38714abb15?auto=format&fit=crop&q=80&w=1200",
+    imageUrl: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&q=80&w=1200",
     characteristics: ["Silk Finish", "Designer Collection", "Adjustable Fit"],
     inStock: true
   },
