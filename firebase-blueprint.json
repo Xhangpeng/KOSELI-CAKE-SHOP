@@ -77,6 +77,21 @@
         "role": { "type": "string", "enum": ["admin", "user"] }
       },
       "required": ["uid", "email", "displayName", "role"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System or admin notification for users",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string", "description": "Target user ID, or 'all' for broadcast" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["targeted", "broadcast"] },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "senderId": { "type": "string" }
+      },
+      "required": ["userId", "message", "type", "read", "createdAt"]
     }
   },
   "firestore": {
@@ -91,6 +106,10 @@
     "/users": {
       "schema": "UserProfile",
       "description": "User profiles"
+    },
+    "/notifications": {
+      "schema": "Notification",
+      "description": "User and broadcast notifications"
     }
   }
 }

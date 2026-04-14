@@ -101,6 +101,14 @@ service cloud.firestore {
              data.role in ['admin', 'user'];
     }
 
+    function isValidNotification(data) {
+      return data.keys().hasAll(['userId', 'message', 'type', 'read', 'createdAt']) &&
+             data.userId is string &&
+             data.message is string && data.message.size() >= 1 && data.message.size() <= 1000 &&
+             data.type in ['targeted', 'broadcast'] &&
+             data.read is bool;
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -118,7 +126,7 @@ service cloud.firestore {
       allow update: if isAuthenticated() && (
         isAdmin() || 
         (request.auth.uid == resource.data.userId && 
-         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paymentStatus', 'status']) &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paymentStatus', 'status', 'timeline']) &&
          request.resource.data.status == 'cancelled' && resource.data.status == 'pending')
       );
       allow delete: if isAdmin();
@@ -130,6 +138,16 @@ service cloud.firestore {
                       (request.resource.data.role == 'user' || isAdmin());
       allow update: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && 
                       (request.resource.data.role == resource.data.role || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || resource.data.userId == 'all' || isAdmin());
+      allow create: if isAdmin() && isValidNotification(request.resource.data);
+      allow update: if isAuthenticated() && (
+        (resource.data.userId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])) ||
+        isAdmin()
+      );
       allow delete: if isAdmin();
     }
   }

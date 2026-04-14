@@ -81,5 +81,32 @@ export const INITIAL_PRODUCTS: Omit<Product, 'id'>[] = [
     imageUrl: "https://images.unsplash.com/photo-1533285326576-292057ee3ed0?auto=format&fit=crop&q=80&w=1200",
     characteristics: ["Laser Cut", "24k Gold Hue", "Keepsake Quality"],
     inStock: true
+  },
+  {
+    name: "Velvet Dream Cupcakes",
+    description: "Box of 6 signature red velvet cupcakes with cream cheese frosting.",
+    price: 1200,
+    category: "Cupcakes",
+    imageUrl: "https://images.unsplash.com/photo-1576618148400-f54bed99fcfd?auto=format&fit=crop&q=80&w=1200",
+    characteristics: ["Red Velvet", "Cream Cheese", "Box of 6"],
+    inStock: true
+  },
+  {
+    name: "French Butter Croissants",
+    description: "Flaky, golden-brown pastries made with 100% French butter.",
+    price: 800,
+    category: "Pastries",
+    imageUrl: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&q=80&w=1200",
+    characteristics: ["French Butter", "Flaky Layers", "Baked Daily"],
+    inStock: true
+  },
+  {
+    name: "Celebration Combo Royale",
+    description: "Signature Noir Truffle cake paired with a bouquet of fresh roses and a gold topper.",
+    price: 4200,
+    category: "Combos",
+    imageUrl: "https://images.unsplash.com/photo-1530103043960-ef38714abb15?auto=format&fit=crop&q=80&w=1200",
+    characteristics: ["Cake + Flowers", "Gold Topper", "Luxury Gift"],
+    inStock: true
   }
 ];

@@ -39,7 +39,15 @@ import {
   Trash2,
   ArrowRight,
   Ticket,
-  Tag
+  Tag,
+  Bell,
+  ShoppingBag,
+  TrendingUp,
+  XCircle,
+  Shield,
+  Cake,
+  Coffee,
+  ChevronUp
 } from 'lucide-react';
 import { 
   auth, 
@@ -58,10 +66,19 @@ import {
   where, 
   orderBy, 
   serverTimestamp,
+  arrayUnion,
   OperationType,
   handleFirestoreError
 } from './firebase';
-import { Product, Order, OrderItem, DeliveryDetails, OrderStatus, UserProfile } from './types';
+import { 
+  Product, 
+  Order, 
+  OrderItem, 
+  DeliveryDetails, 
+  OrderStatus, 
+  UserProfile,
+  AppNotification
+} from './types';
 import { INITIAL_PRODUCTS } from './constants';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -77,7 +94,7 @@ import { Toaster, toast } from 'sonner';
 
 // --- Components ---
 
-const Navbar = ({ user, cartCount, onOpenCart, onOpenAuth, onSignOut, isAdmin, onOpenAdmin, onOpenOrders, onOpenProfile, setView }: { 
+const Navbar = ({ user, cartCount, onOpenCart, onOpenAuth, onSignOut, isAdmin, onOpenAdmin, onOpenOrders, onOpenProfile, setView, onOpenNotifications, unreadNotifications }: { 
   user: any, 
   cartCount: number, 
   onOpenCart: () => void, 
@@ -87,47 +104,111 @@ const Navbar = ({ user, cartCount, onOpenCart, onOpenAuth, onSignOut, isAdmin, o
   onOpenAdmin: () => void,
   onOpenOrders: () => void,
   onOpenProfile: () => void,
-  setView: (view: string) => void
+  setView: (view: any) => void,
+  onOpenNotifications: () => void,
+  unreadNotifications: number
 }) => (
-  <nav className="sticky top-0 z-50 w-full bg-pearl/80 backdrop-blur-2xl text-emerald-deep shadow-sm border-b border-emerald-deep/5">
-    <div className="container mx-auto flex items-center justify-between py-5 px-6">
-      <div 
-        className="flex items-center gap-4 group cursor-pointer" 
-        onClick={() => { setView('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-      >
-        <div className="flex flex-col items-center">
-          <h1 className="text-2xl md:text-3xl font-bold tracking-[-0.05em] font-heading text-emerald-deep leading-none">KOSELI</h1>
-          <p className="text-[9px] md:text-[10px] font-bold tracking-[0.5em] text-champagne uppercase mt-1.5">Artisan Bakery</p>
+  <nav className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-2xl border-b border-emerald-deep/5">
+    <div className="container mx-auto px-4 md:px-8 h-20 md:h-24 flex items-center justify-between">
+      <div className="flex items-center gap-8 md:gap-12">
+        <button 
+          onClick={() => { setView('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+          className="flex flex-col group cursor-pointer"
+        >
+          <span className="text-2xl md:text-3xl font-heading font-bold tracking-[-0.05em] text-emerald-deep leading-none group-hover:text-gold transition-colors duration-500 italic">KOSELI</span>
+          <span className="text-[7px] md:text-[8px] font-bold tracking-[0.5em] text-emerald-deep/30 uppercase mt-1 group-hover:text-gold/50 transition-colors duration-500">Artisan Bakery</span>
+        </button>
+        
+        <div className="hidden lg:flex items-center gap-10">
+          {['Collection', 'About', 'Bespoke'].map((item) => (
+            <button 
+              key={item}
+              onClick={() => {
+                if (item === 'Collection') {
+                  setView('home');
+                  setTimeout(() => document.getElementById('cakes')?.scrollIntoView({ behavior: 'smooth' }), 100);
+                }
+              }}
+              className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-deep/40 hover:text-emerald-deep transition-all relative group"
+            >
+              {item}
+              <span className="absolute -bottom-2 left-0 w-0 h-0.5 bg-gold transition-all group-hover:w-full" />
+            </button>
+          ))}
         </div>
       </div>
-      
-      <div className="flex items-center gap-6">
-        {isAdmin && (
+
+      <div className="flex items-center gap-3 md:gap-6">
+        <div className="hidden md:flex items-center gap-2 bg-emerald-deep/5 px-4 py-2 rounded-full border border-emerald-deep/5">
+          <MapPin className="h-3.5 w-3.5 text-gold" />
+          <span className="text-[9px] font-bold text-emerald-deep/60 uppercase tracking-widest">Kathmandu, NP</span>
+        </div>
+
+        <div className="flex items-center gap-2 md:gap-4">
           <Button 
             variant="ghost" 
-            className="hidden md:flex items-center gap-2 text-emerald-deep font-bold text-[10px] uppercase tracking-widest hover:bg-emerald-deep hover:text-white rounded-full px-6 transition-all"
-            onClick={onOpenAdmin}
+            size="icon" 
+            className="h-10 w-10 md:h-12 md:w-12 rounded-full text-emerald-deep/40 hover:text-emerald-deep hover:bg-emerald-deep/5 transition-all"
+            onClick={() => setView('search')}
           >
-            <LayoutDashboard className="h-4 w-4" /> Admin Panel
+            <Search className="h-5 w-5" strokeWidth={1.5} />
           </Button>
-        )}
-        <Button variant="ghost" size="icon" className="relative text-emerald-deep hover:bg-emerald-deep/5 h-12 w-12 rounded-full" onClick={onOpenCart}>
-          <ShoppingCart className="h-5 w-5" strokeWidth={1.5} />
-          {cartCount > 0 && (
-            <Badge className="absolute top-1 right-1 h-5 w-5 justify-center rounded-full bg-coral p-0 text-[10px] text-white border-2 border-pearl font-bold shadow-sm">
-              {cartCount}
-            </Badge>
+          
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-10 w-10 md:h-12 md:w-12 rounded-full text-emerald-deep/40 hover:text-emerald-deep hover:bg-emerald-deep/5 transition-all relative"
+            onClick={onOpenCart}
+          >
+            <ShoppingCart className="h-5 w-5" strokeWidth={1.5} />
+            {cartCount > 0 && (
+              <span className="absolute top-1 right-1 h-4 w-4 bg-coral text-white text-[8px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-lg">
+                {cartCount}
+              </span>
+            )}
+          </Button>
+
+          <div className="h-8 w-[1px] bg-emerald-deep/10 mx-1 hidden md:block" />
+
+          {user ? (
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="ghost" 
+                className="hidden md:flex items-center gap-3 px-4 h-12 rounded-full hover:bg-emerald-deep/5 group"
+                onClick={() => setView('profile')}
+              >
+                <div className="h-8 w-8 rounded-full bg-emerald-deep/10 flex items-center justify-center border border-emerald-deep/5 group-hover:border-gold/30 transition-all">
+                  {user.photoURL ? (
+                    <img src={user.photoURL} alt="" className="h-full w-full rounded-full object-cover" />
+                  ) : (
+                    <UserIcon className="h-4 w-4 text-emerald-deep/60" />
+                  )}
+                </div>
+                <div className="text-left">
+                  <p className="text-[9px] font-bold text-emerald-deep uppercase tracking-widest leading-none mb-1">Welcome</p>
+                  <p className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest truncate max-w-[80px]">{user.displayName?.split(' ')[0] || 'Artisan'}</p>
+                </div>
+              </Button>
+              {isAdmin && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-gold/10 text-gold hover:bg-gold hover:text-white transition-all shadow-lg shadow-gold/10"
+                  onClick={onOpenAdmin}
+                >
+                  <Shield className="h-5 w-5" />
+                </Button>
+              )}
+            </div>
+          ) : (
+            <Button 
+              className="bg-emerald-deep text-white hover:bg-gold rounded-full px-6 md:px-8 h-10 md:h-12 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.2em] shadow-xl shadow-emerald-deep/10 transition-all"
+              onClick={onOpenAuth}
+            >
+              Sign In
+            </Button>
           )}
-        </Button>
-        {user ? (
-          <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full hover:bg-emerald-deep/5" onClick={() => setView('profile')}>
-            <User className="h-5 w-5" strokeWidth={1.5} />
-          </Button>
-        ) : (
-          <Button variant="ghost" size="sm" className="hidden md:flex font-bold text-[10px] uppercase tracking-widest text-emerald-deep border border-emerald-deep/10 rounded-full px-6 hover:bg-emerald-deep hover:text-white transition-all" onClick={onOpenAuth}>
-            Sign In
-          </Button>
-        )}
+        </div>
       </div>
     </div>
   </nav>
@@ -135,30 +216,31 @@ const Navbar = ({ user, cartCount, onOpenCart, onOpenAuth, onSignOut, isAdmin, o
 
 const VisualNav = ({ activeTab, onTabChange }: { activeTab: string, onTabChange: (tab: string) => void }) => {
   const items = [
-    { id: 'all', name: 'All Cakes', icon: CakeIcon },
-    { id: 'birthday', name: 'Birthday', icon: PartyPopper },
+    { id: 'all', name: 'All Items', icon: Grid },
+    { id: 'birthday', name: 'Birthday', icon: CakeIcon },
     { id: 'anniversary', name: 'Anniv', icon: Heart },
     { id: 'wedding', name: 'Wedding', icon: Star },
-    { id: 'accessories', name: 'Candles', icon: Flame },
-    { id: 'accessories', name: 'Cone Hats', icon: Sparkles },
-    { id: 'combo', name: 'Combos', icon: Zap },
+    { id: 'cupcakes', name: 'Cupcakes', icon: CakeIcon },
+    { id: 'pastries', name: 'Pastries', icon: Coffee },
+    { id: 'accessories', name: 'Extras', icon: Gift },
+    { id: 'combo', name: 'Combos', icon: Package },
   ];
 
   return (
-    <div className="w-full mb-16">
-      <div className="flex items-center gap-10 overflow-x-auto no-scrollbar py-6 px-2">
+    <div className="w-full mb-12 md:mb-20 overflow-hidden">
+      <div className="flex items-center justify-start md:justify-center gap-4 md:gap-12 overflow-x-auto no-scrollbar py-8 px-6">
         {items.map((item, idx) => {
           const isActive = activeTab === item.id;
           return (
             <button 
               key={idx}
               onClick={() => onTabChange(item.id)}
-              className="flex flex-col items-center gap-5 min-w-[90px] md:min-w-[110px] group transition-all"
+              className="flex flex-col items-center gap-5 min-w-[70px] md:min-w-[110px] group transition-all"
             >
-              <div className={`h-18 w-18 md:h-24 md:w-24 rounded-[2rem] flex items-center justify-center transition-all duration-700 border ${isActive ? 'bg-emerald-deep text-white border-emerald-deep shadow-2xl scale-110 rotate-3' : 'bg-white text-emerald-deep border-emerald-deep/5 shadow-sm group-hover:border-champagne group-hover:scale-105 group-hover:-rotate-3'}`}>
-                <item.icon className="h-7 w-7 md:h-10 md:w-10" strokeWidth={1} />
+              <div className={`h-14 w-14 md:h-24 md:w-24 rounded-full flex items-center justify-center transition-all duration-700 border-2 ${isActive ? 'bg-emerald-deep text-white border-gold shadow-[0_15px_40px_rgba(6,78,59,0.3)] scale-110' : 'bg-white text-emerald-deep/30 border-emerald-deep/5 shadow-sm group-hover:border-gold/30 group-hover:text-gold group-hover:-translate-y-2'}`}>
+                <item.icon className="h-6 w-6 md:h-10 md:w-10" strokeWidth={1} />
               </div>
-              <span className={`text-[10px] md:text-[12px] font-bold uppercase tracking-[0.3em] transition-colors ${isActive ? 'text-emerald-deep' : 'text-muted-foreground group-hover:text-emerald-deep'}`}>
+              <span className={`text-[8px] md:text-[10px] font-bold uppercase tracking-[0.3em] transition-all duration-500 ${isActive ? 'text-emerald-deep translate-y-1' : 'text-emerald-deep/20 group-hover:text-gold'}`}>
                 {item.name}
               </span>
             </button>
@@ -198,19 +280,19 @@ const CartPage = ({
 
   if (cart.length === 0) {
     return (
-      <div className="container mx-auto px-6 py-32 text-center">
+      <div className="container mx-auto px-6 py-20 md:py-32 text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="max-w-md mx-auto"
         >
-          <div className="h-32 w-32 bg-emerald-deep/5 rounded-full flex items-center justify-center mx-auto mb-8">
-            <ShoppingCart className="h-12 w-12 text-emerald-deep/20" strokeWidth={1} />
+          <div className="h-24 w-24 md:h-32 md:w-32 bg-emerald-deep/5 rounded-full flex items-center justify-center mx-auto mb-6 md:mb-8">
+            <ShoppingCart className="h-8 w-8 md:h-12 md:w-12 text-emerald-deep/20" strokeWidth={1} />
           </div>
-          <h2 className="text-4xl font-heading font-bold text-emerald-deep italic mb-4">Your collection is empty</h2>
-          <p className="text-muted-foreground mb-12 font-medium">Begin your journey through our exquisite selection of artisanal masterpieces.</p>
+          <h2 className="text-3xl md:text-4xl font-heading font-bold text-emerald-deep italic mb-4">Your collection is empty</h2>
+          <p className="text-sm md:text-base text-muted-foreground mb-8 md:mb-12 font-medium">Begin your journey through our exquisite selection of artisanal masterpieces.</p>
           <Button 
-            className="bg-emerald-deep text-white rounded-full px-12 h-16 font-bold uppercase tracking-widest hover:bg-champagne transition-all shadow-2xl shadow-emerald-deep/20"
+            className="bg-emerald-deep text-white rounded-full px-8 md:px-12 h-14 md:h-16 font-bold uppercase tracking-widest hover:bg-champagne transition-all shadow-2xl shadow-emerald-deep/20"
             onClick={onExplore}
           >
             Explore Collection
@@ -412,23 +494,23 @@ const BottomNav = ({ cartCount, onOpenCart, onOpenAuth, user, onOpenOrders, onOp
     return (
       <div className="relative group flex flex-col items-center">
         <button 
-          className={`flex flex-col items-center gap-1 transition-all active:scale-90 p-3 rounded-full ${isActive ? 'text-white bg-emerald-deep shadow-lg shadow-emerald-deep/20' : 'text-emerald-deep/40 hover:text-emerald-deep hover:bg-emerald-deep/5'}`} 
+          className={`flex flex-col items-center gap-1 transition-all active:scale-90 p-4 rounded-full ${isActive ? 'text-white bg-emerald-deep shadow-[0_15px_30px_rgba(6,78,59,0.3)]' : 'text-emerald-deep/30 hover:text-emerald-deep hover:bg-emerald-deep/5'}`} 
           onClick={() => {
             if (onClick) onClick();
             else setView(view);
           }}
         >
           <div className="relative">
-            <Icon className="h-5 w-5" strokeWidth={isActive ? 2 : 1.5} />
+            <Icon className="h-6 w-6" strokeWidth={isActive ? 2 : 1.5} />
             {badge > 0 && (
-              <Badge className="absolute -top-2 -right-2 h-5 w-5 justify-center rounded-full bg-coral p-0 text-[9px] text-white border-2 border-white font-bold">
+              <Badge className="absolute -top-3 -right-3 h-6 w-6 justify-center rounded-full bg-coral p-0 text-[10px] text-white border-2 border-white font-bold shadow-lg">
                 {badge}
               </Badge>
             )}
           </div>
         </button>
         
-        <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-emerald-deep text-white text-[10px] font-bold py-1.5 px-3 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap shadow-xl translate-y-2 group-hover:translate-y-0">
+        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-emerald-deep text-white text-[10px] font-bold py-2 px-4 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-500 pointer-events-none whitespace-nowrap shadow-2xl translate-y-2 group-hover:translate-y-0 border border-white/10">
           {label}
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-emerald-deep" />
         </div>
@@ -437,15 +519,10 @@ const BottomNav = ({ cartCount, onOpenCart, onOpenAuth, user, onOpenOrders, onOp
   };
 
   return (
-    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-lg h-22 bg-white/90 backdrop-blur-3xl border border-emerald-deep/5 flex items-center justify-around px-6 rounded-[2.5rem] shadow-[0_25px_60px_rgba(0,0,0,0.2)]">
+    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md h-24 bg-white/90 backdrop-blur-3xl border border-emerald-deep/5 flex items-center justify-around px-8 rounded-[3rem] shadow-[0_30px_70px_rgba(0,0,0,0.25)]">
       <NavItem icon={HomeIcon} label="Home" view="home" onClick={() => { setView('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
       <NavItem icon={Grid} label="Collection" view="menu" onClick={() => { setView('home'); setTimeout(() => document.getElementById('cakes')?.scrollIntoView({ behavior: 'smooth' }), 100); }} />
       <NavItem icon={ShoppingCart} label="Basket" view="cart" badge={cartCount} />
-      {isAdmin ? (
-        <NavItem icon={LayoutDashboard} label="Admin" view="admin" />
-      ) : (
-        <NavItem icon={Package} label="Orders" view="orders" onClick={() => user ? setView('orders') : onOpenAuth()} />
-      )}
       <NavItem icon={UserIcon} label="Account" view="profile" onClick={() => user ? setView('profile') : onOpenAuth()} />
     </div>
   );
@@ -460,7 +537,7 @@ const ProductCard: React.FC<{
   const navigate = useNavigate();
   
   return (
-    <Card className={`group overflow-hidden border-none shadow-sm hover:shadow-2xl transition-all duration-700 rounded-[3rem] bg-white flex flex-col h-full relative ${!product.inStock ? 'opacity-80 grayscale-[0.3]' : ''}`}>
+    <Card className={`group overflow-hidden border-none shadow-sm hover:shadow-[0_40px_80px_rgba(0,0,0,0.1)] transition-all duration-1000 rounded-[3.5rem] bg-white flex flex-col h-full relative ${!product.inStock ? 'opacity-80 grayscale-[0.3]' : ''}`}>
       <div 
         className="relative aspect-[4/5] overflow-hidden bg-muted cursor-pointer"
         onClick={() => navigate(`/product/${product.id}`)}
@@ -468,68 +545,71 @@ const ProductCard: React.FC<{
         <img 
           src={product.imageUrl} 
           alt={product.name} 
-          className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-110"
+          className="h-full w-full object-cover transition-transform duration-[2000ms] group-hover:scale-110"
           referrerPolicy="no-referrer"
           loading="lazy"
         />
         {!product.inStock && (
           <div className="absolute inset-0 bg-emerald-deep/40 backdrop-blur-[4px] flex items-center justify-center z-20">
-            <Badge className="bg-coral text-white border-none px-8 py-3 rounded-full font-bold text-xs uppercase tracking-[0.2em] shadow-2xl animate-pulse">
+            <Badge className="bg-coral text-white border-none px-8 py-3 rounded-full font-bold text-[10px] uppercase tracking-[0.3em] shadow-2xl animate-pulse">
               Out of Stock
             </Badge>
           </div>
         )}
-        <div className="absolute inset-0 bg-emerald-deep/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
-          <Button className="bg-white text-emerald-deep hover:bg-champagne hover:text-white rounded-full px-10 h-14 font-bold text-xs uppercase tracking-widest shadow-2xl transition-all">View Details</Button>
+        <div className="absolute inset-0 bg-emerald-deep/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 flex items-center justify-center">
+          <Button className="bg-white/90 backdrop-blur-md text-emerald-deep hover:bg-gold hover:text-white rounded-full px-10 h-14 font-bold text-[10px] uppercase tracking-[0.2em] shadow-2xl transition-all border border-emerald-deep/5">View Masterpiece</Button>
         </div>
-        <div className="absolute top-6 left-6 flex flex-col gap-3">
-          <Badge className="bg-white/90 backdrop-blur-md text-emerald-deep border-none shadow-lg font-bold text-[10px] px-4 py-1.5 rounded-full tracking-[0.2em] w-fit">
+        <div className="absolute top-8 left-8 flex flex-col gap-3">
+          <Badge className="bg-white/95 backdrop-blur-xl text-emerald-deep border border-emerald-deep/5 shadow-xl font-bold text-[9px] px-5 py-2 rounded-full tracking-[0.3em] w-fit">
             {product.category.toUpperCase()}
           </Badge>
         </div>
         <button 
-          className={`absolute top-6 right-6 h-12 w-12 rounded-full flex items-center justify-center transition-all duration-500 z-30 ${isWishlisted ? 'bg-coral text-white' : 'bg-white/80 backdrop-blur-md text-emerald-deep hover:bg-emerald-deep hover:text-white shadow-lg'}`}
+          className={`absolute top-8 right-8 h-14 w-14 rounded-full flex items-center justify-center transition-all duration-700 z-30 ${isWishlisted ? 'bg-coral text-white shadow-coral/30' : 'bg-white/90 backdrop-blur-xl text-emerald-deep hover:bg-emerald-deep hover:text-white shadow-xl border border-emerald-deep/5'}`}
           onClick={(e) => { e.stopPropagation(); onToggleWishlist(product.id); }}
         >
-          <Heart className={`h-5 w-5 ${isWishlisted ? 'fill-current' : ''}`} />
+          <Heart className={`h-6 w-6 ${isWishlisted ? 'fill-current' : ''}`} strokeWidth={1.5} />
         </button>
       </div>
       
-      <div className="p-8 flex flex-col flex-1 gap-4">
+      <div className="p-10 flex flex-col flex-1 gap-6">
         <div className="flex justify-between items-start gap-4">
-          <div className="space-y-1">
-            <h4 className="font-heading font-bold text-2xl text-emerald-deep leading-tight group-hover:text-champagne transition-colors">{product.name}</h4>
-            <p className="text-[10px] text-emerald-deep/40 font-bold uppercase tracking-[0.2em]">{product.characteristics[0] || 'Artisan Creation'}</p>
+          <div className="space-y-2">
+            <h4 className="font-heading font-bold text-2xl md:text-3xl text-emerald-deep leading-tight group-hover:text-gold transition-colors duration-500 italic">{product.name}</h4>
+            <div className="flex items-center gap-2">
+              <div className="h-1 w-1 rounded-full bg-gold" />
+              <p className="text-[9px] text-emerald-deep/30 font-bold uppercase tracking-[0.3em]">{product.characteristics[0] || 'Artisan Creation'}</p>
+            </div>
           </div>
           <div className="flex flex-col items-end">
-            <span className="text-[10px] font-bold text-emerald-deep/20 uppercase tracking-[0.2em] leading-none">Value</span>
+            <span className="text-[8px] font-bold text-emerald-deep/20 uppercase tracking-[0.3em] leading-none mb-1">Value</span>
             <div className="flex items-baseline gap-1">
               <span className="text-[10px] font-bold text-emerald-deep/30">Rs.</span>
-              <span className="font-heading font-bold text-base text-emerald-deep/40 tracking-tighter">{product.price}</span>
+              <span className="font-heading font-bold text-xl text-emerald-deep/50 tracking-tighter">{product.price}</span>
             </div>
           </div>
         </div>
         
-        <p className="text-sm text-muted-foreground line-clamp-2 font-medium leading-relaxed">
+        <p className="text-sm text-emerald-deep/60 line-clamp-2 font-medium leading-relaxed italic">
           {product.description}
         </p>
 
-        <div className="mt-auto pt-4">
+        <div className="mt-auto pt-6">
           <Button 
-            className={`w-full h-14 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all shadow-lg ${
+            className={`w-full h-16 rounded-3xl font-bold text-[10px] uppercase tracking-[0.3em] transition-all duration-700 shadow-xl ${
               product.inStock 
-                ? 'bg-emerald-deep text-white hover:bg-champagne shadow-emerald-deep/10' 
+                ? 'bg-emerald-deep text-white hover:bg-gold shadow-emerald-deep/20 hover:-translate-y-1' 
                 : 'bg-muted text-muted-foreground cursor-not-allowed'
             }`}
             onClick={() => product.inStock && onAddToCart(product)}
             disabled={!product.inStock}
           >
             {product.inStock ? (
-              <span className="flex items-center gap-3">
-                <ShoppingCart className="h-4 w-4" /> Add to Collection
+              <span className="flex items-center gap-4">
+                <ShoppingCart className="h-4 w-4" strokeWidth={2} /> Add to Collection
               </span>
             ) : (
-              <span className="flex items-center gap-3">
+              <span className="flex items-center gap-4">
                 <AlertCircle className="h-4 w-4" /> Currently Unavailable
               </span>
             )}
@@ -774,11 +854,25 @@ const PaymentSuccess = () => {
           // Update Firestore (skip for test orders)
           if (verifiedOrderId && !verifiedOrderId.startsWith('TEST-')) {
             const orderRef = doc(db, 'orders', verifiedOrderId);
-            await updateDoc(orderRef, {
-              paymentStatus: 'paid',
-              timeline: [
-                { status: 'confirmed', timestamp: new Date().toISOString(), message: 'Payment verified successfully.' }
-              ]
+            
+            // We need to wait for auth to be ready before updating
+            const unsubscribe = auth.onAuthStateChanged(async (user) => {
+              if (user) {
+                try {
+                  await updateDoc(orderRef, {
+                    paymentStatus: 'paid',
+                    status: 'confirmed',
+                    timeline: arrayUnion({ 
+                      status: 'confirmed', 
+                      timestamp: new Date().toISOString(), 
+                      message: 'Payment verified successfully. Order is now confirmed.' 
+                    })
+                  });
+                } catch (err) {
+                  console.error('Error updating order after payment:', err);
+                }
+                unsubscribe();
+              }
             });
           }
           setStatus('success');
@@ -870,6 +964,59 @@ const PaymentFailure = () => {
   );
 };
 
+const NotificationInbox = ({ 
+  notifications, 
+  onMarkAsRead,
+  onClose
+}: { 
+  notifications: AppNotification[], 
+  onMarkAsRead: (id: string) => void,
+  onClose: () => void
+}) => {
+  return (
+    <div className="bg-white rounded-3xl shadow-2xl border border-emerald-deep/5 overflow-hidden w-full max-w-md">
+      <div className="p-6 bg-emerald-deep text-white flex items-center justify-between">
+        <h3 className="font-heading font-bold text-xl">Notifications</h3>
+        <Button variant="ghost" size="icon" className="text-white hover:bg-white/10" onClick={onClose}>
+          <X className="h-5 w-5" />
+        </Button>
+      </div>
+      <div className="max-h-[400px] overflow-y-auto">
+        {notifications.length === 0 ? (
+          <div className="p-12 text-center space-y-4">
+            <div className="h-16 w-16 bg-emerald-deep/5 rounded-full flex items-center justify-center mx-auto">
+              <Bell className="h-8 w-8 text-emerald-deep/20" />
+            </div>
+            <p className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">No notifications yet</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-emerald-deep/5">
+            {notifications.map((notif) => (
+              <div 
+                key={notif.id} 
+                className={`p-6 transition-colors hover:bg-emerald-deep/5 cursor-pointer ${!notif.read ? 'bg-emerald-deep/[0.02]' : ''}`}
+                onClick={() => onMarkAsRead(notif.id)}
+              >
+                <div className="flex gap-4">
+                  <div className={`h-2 w-2 rounded-full mt-2 shrink-0 ${notif.read ? 'bg-transparent' : 'bg-emerald-500'}`} />
+                  <div className="space-y-1">
+                    <p className={`text-sm ${notif.read ? 'text-emerald-deep/60' : 'text-emerald-deep font-bold'}`}>
+                      {notif.message}
+                    </p>
+                    <p className="text-[10px] text-emerald-deep/40 font-bold uppercase tracking-widest">
+                      {new Date(notif.createdAt?.toDate?.() || notif.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const CartNotification = ({ product, isOpen }: { product: Product | null, isOpen: boolean }) => {
   if (!product) return null;
   return (
@@ -916,43 +1063,54 @@ const AddToCartModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[450px] rounded-[2.5rem] border-emerald-deep/5 shadow-2xl p-0 overflow-hidden">
-        <div className="bg-emerald-deep p-8 text-white text-center space-y-2">
-          <div className="h-16 w-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle2 className="h-8 w-8 text-gold" />
-          </div>
-          <h2 className="text-2xl font-heading font-bold italic">Added to Collection</h2>
-          <p className="text-white/60 text-[10px] font-bold uppercase tracking-[0.3em]">Exquisite choice, artisan</p>
+      <DialogContent 
+        className="sm:max-w-[500px] w-[95vw] rounded-[3.5rem] border-emerald-deep/5 shadow-[0_50px_100px_rgba(0,0,0,0.2)] p-0 overflow-hidden cursor-pointer group"
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest('button')) return;
+          onGoToCart();
+        }}
+      >
+        <div className="bg-emerald-deep p-10 md:p-12 text-white text-center space-y-4 relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(212,175,55,0.2),transparent)]" />
+          <motion.div 
+            initial={{ scale: 0, rotate: -20 }}
+            animate={{ scale: 1, rotate: 0 }}
+            className="h-20 w-20 md:h-24 md:w-24 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center mx-auto mb-6 border border-white/20 shadow-2xl"
+          >
+            <CheckCircle2 className="h-10 w-10 md:h-12 md:w-12 text-gold" strokeWidth={1.5} />
+          </motion.div>
+          <h2 className="text-2xl md:text-4xl font-heading font-bold italic tracking-tight">Added to Collection</h2>
+          <p className="text-white/40 text-[10px] md:text-[11px] font-bold uppercase tracking-[0.4em]">An exquisite choice, artisan</p>
         </div>
         
-        <div className="p-8 space-y-8">
-          <div className="flex items-center gap-6 bg-emerald-deep/5 p-4 rounded-3xl border border-emerald-deep/5">
-            <div className="h-20 w-20 rounded-2xl overflow-hidden shrink-0 border border-emerald-deep/10">
-              <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+        <div className="p-10 md:p-12 space-y-10">
+          <div className="flex items-center gap-6 md:gap-8 bg-emerald-deep/[0.02] p-6 rounded-[2.5rem] border border-emerald-deep/5 shadow-inner">
+            <div className="h-24 w-24 md:h-32 md:w-32 rounded-[2rem] overflow-hidden shrink-0 border border-emerald-deep/10 shadow-xl">
+              <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-110" referrerPolicy="no-referrer" />
             </div>
-            <div className="flex-1">
-              <h4 className="font-heading font-bold text-emerald-deep text-lg leading-tight">{product.name}</h4>
-              <p className="text-[10px] text-emerald-deep/40 font-bold uppercase tracking-widest mt-1">{product.category}</p>
-              <div className="flex items-baseline gap-1 mt-2">
-                <span className="text-[10px] font-bold text-emerald-deep/40">Rs.</span>
-                <span className="font-heading font-bold text-lg text-emerald-deep/60">{product.price}</span>
+            <div className="flex-1 space-y-2">
+              <h4 className="font-heading font-bold text-emerald-deep text-xl md:text-2xl leading-tight italic">{product.name}</h4>
+              <p className="text-[10px] md:text-[11px] text-emerald-deep/30 font-bold uppercase tracking-[0.3em]">{product.category}</p>
+              <div className="flex items-baseline gap-1 mt-4">
+                <span className="text-[10px] md:text-[11px] font-bold text-emerald-deep/20">Rs.</span>
+                <span className="font-heading font-bold text-2xl md:text-3xl text-emerald-deep/60 tracking-tighter">{product.price}</span>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
             <Button 
               variant="outline" 
-              className="h-14 rounded-2xl border-emerald-deep/10 text-emerald-deep font-bold text-[10px] uppercase tracking-widest hover:bg-emerald-deep/5"
+              className="h-14 md:h-16 rounded-2xl border-emerald-deep/10 text-emerald-deep font-bold text-[10px] md:text-[11px] uppercase tracking-[0.3em] hover:bg-emerald-deep/5 transition-all"
               onClick={onClose}
             >
-              Continue Shopping
+              Continue Exploring
             </Button>
             <Button 
-              className="h-14 rounded-2xl bg-emerald-deep text-white hover:bg-champagne font-bold text-[10px] uppercase tracking-widest shadow-xl shadow-emerald-deep/10"
+              className="h-14 md:h-16 rounded-2xl bg-emerald-deep text-white font-bold text-[10px] md:text-[11px] uppercase tracking-[0.3em] hover:bg-gold shadow-xl shadow-emerald-deep/10 transition-all"
               onClick={onGoToCart}
             >
-              View My Cart
+              View Collection
             </Button>
           </div>
         </div>
@@ -964,22 +1122,42 @@ const AddToCartModal = ({
 const AdminDashboard = ({ 
   products, 
   orders, 
+  users,
   onAddProduct, 
   onEditProduct, 
   onDeleteProduct, 
   onToggleStock,
   onUpdateOrderStatus,
+  onUpdatePaymentStatus,
+  onSendNotification,
   onBack
 }: { 
   products: Product[], 
   orders: Order[], 
+  users: UserProfile[],
   onAddProduct: () => void, 
   onEditProduct: (p: Product) => void, 
   onDeleteProduct: (id: string) => void,
   onToggleStock: (id: string, inStock: boolean) => void,
   onUpdateOrderStatus: (orderId: string, status: OrderStatus) => void,
+  onUpdatePaymentStatus: (orderId: string, status: 'paid' | 'unpaid') => void,
+  onSendNotification: (userId: string, message: string, type: 'targeted' | 'broadcast') => void,
   onBack: () => void
 }) => {
+  const [orderFilter, setOrderFilter] = useState<OrderStatus | 'all'>('all');
+  const [notifTarget, setNotifTarget] = useState<string>('all');
+  const [notifMessage, setNotifMessage] = useState('');
+
+  const filteredOrders = orderFilter === 'all' ? orders : orders.filter(o => o.status === orderFilter);
+  
+  const stats = {
+    totalOrders: orders.length,
+    totalRevenue: orders.filter(o => o.status !== 'cancelled').reduce((acc, o) => acc + o.totalAmount, 0),
+    pendingCount: orders.filter(o => o.status === 'pending').length,
+    cancelledCount: orders.filter(o => o.status === 'cancelled').length,
+    deliveredCount: orders.filter(o => o.status === 'delivered').length
+  };
+
   return (
     <div className="container mx-auto px-6 py-12 md:py-24 pb-48">
       <div className="flex flex-col gap-12">
@@ -1006,10 +1184,30 @@ const AdminDashboard = ({
           </Button>
         </div>
 
+        {/* Stats Summary */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {[
+            { label: 'Total Orders', value: stats.totalOrders, icon: ShoppingBag, color: 'text-emerald-deep' },
+            { label: 'Revenue', value: `Rs. ${stats.totalRevenue}`, icon: TrendingUp, color: 'text-emerald-500' },
+            { label: 'Pending', value: stats.pendingCount, icon: Clock, color: 'text-champagne' },
+            { label: 'Delivered', value: stats.deliveredCount, icon: CheckCircle2, color: 'text-blue-500' },
+            { label: 'Cancelled', value: stats.cancelledCount, icon: XCircle, color: 'text-coral' }
+          ].map((stat, i) => (
+            <div key={i} className="bg-white p-6 rounded-3xl border border-emerald-deep/5 shadow-sm space-y-2">
+              <div className="flex items-center justify-between">
+                <stat.icon className={`h-4 w-4 ${stat.color}`} />
+              </div>
+              <p className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">{stat.label}</p>
+              <p className={`text-2xl font-heading font-bold ${stat.color}`}>{stat.value}</p>
+            </div>
+          ))}
+        </div>
+
         <Tabs defaultValue="products" className="w-full">
           <TabsList className="bg-emerald-deep/5 p-1 rounded-2xl mb-12 w-fit">
             <TabsTrigger value="products" className="rounded-xl px-8 py-3 data-[state=active]:bg-white data-[state=active]:text-emerald-deep data-[state=active]:shadow-sm font-bold text-[10px] uppercase tracking-widest">Products</TabsTrigger>
             <TabsTrigger value="orders" className="rounded-xl px-8 py-3 data-[state=active]:bg-white data-[state=active]:text-emerald-deep data-[state=active]:shadow-sm font-bold text-[10px] uppercase tracking-widest">Orders</TabsTrigger>
+            <TabsTrigger value="notifications" className="rounded-xl px-8 py-3 data-[state=active]:bg-white data-[state=active]:text-emerald-deep data-[state=active]:shadow-sm font-bold text-[10px] uppercase tracking-widest">Notifications</TabsTrigger>
           </TabsList>
 
           <TabsContent value="products" className="space-y-8">
@@ -1064,8 +1262,23 @@ const AdminDashboard = ({
           </TabsContent>
 
           <TabsContent value="orders" className="space-y-8">
+            <div className="flex flex-wrap gap-4 mb-8">
+              {['all', 'pending', 'confirmed', 'picked', 'ready', 'delivered', 'cancelled'].map((status) => (
+                <Button
+                  key={status}
+                  variant={orderFilter === status ? 'default' : 'outline'}
+                  className={`rounded-full px-6 text-[10px] font-bold uppercase tracking-widest ${
+                    orderFilter === status ? 'bg-emerald-deep text-white' : 'border-emerald-deep/10 text-emerald-deep'
+                  }`}
+                  onClick={() => setOrderFilter(status as any)}
+                >
+                  {status} ({status === 'all' ? orders.length : orders.filter(o => o.status === status).length})
+                </Button>
+              ))}
+            </div>
+
             <div className="grid gap-6">
-              {orders.map((order) => (
+              {filteredOrders.map((order) => (
                 <div key={order.id} className="bg-white p-8 rounded-[2.5rem] border border-emerald-deep/5 shadow-sm space-y-6">
                   <div className="flex flex-col md:flex-row justify-between gap-6 border-b border-emerald-deep/5 pb-6">
                     <div>
@@ -1083,6 +1296,13 @@ const AdminDashboard = ({
                       }`}>
                         {order.status}
                       </Badge>
+
+                      <Badge className={`px-6 py-2 rounded-full font-bold text-[10px] uppercase tracking-widest border-none ${
+                        order.paymentStatus === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                      }`}>
+                        {order.paymentStatus}
+                      </Badge>
+
                       <select 
                         className="bg-emerald-deep/5 border-none rounded-full px-6 py-2 text-[10px] font-bold uppercase tracking-widest text-emerald-deep focus:ring-2 focus:ring-emerald-deep outline-none cursor-pointer"
                         value={order.status}
@@ -1094,6 +1314,15 @@ const AdminDashboard = ({
                         <option value="ready">Ready</option>
                         <option value="delivered">Delivered</option>
                         <option value="cancelled">Cancelled</option>
+                      </select>
+
+                      <select 
+                        className="bg-emerald-deep/5 border-none rounded-full px-6 py-2 text-[10px] font-bold uppercase tracking-widest text-emerald-deep focus:ring-2 focus:ring-emerald-deep outline-none cursor-pointer"
+                        value={order.paymentStatus}
+                        onChange={(e) => onUpdatePaymentStatus(order.id, e.target.value as 'paid' | 'unpaid')}
+                      >
+                        <option value="unpaid">Unpaid</option>
+                        <option value="paid">Paid</option>
                       </select>
                     </div>
                   </div>
@@ -1123,8 +1352,67 @@ const AdminDashboard = ({
                       </div>
                     </div>
                   </div>
+
+                  {/* Timeline in Admin View */}
+                  <div className="space-y-4 pt-6 border-t border-emerald-deep/5">
+                    <h5 className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">Order Timeline</h5>
+                    <div className="space-y-4">
+                      {order.timeline.map((event, i) => (
+                        <div key={i} className="flex gap-4">
+                          <div className="flex flex-col items-center">
+                            <div className={`h-2 w-2 rounded-full mt-1.5 ${i === order.timeline.length - 1 ? 'bg-emerald-500 animate-pulse' : 'bg-emerald-deep/20'}`} />
+                            {i !== order.timeline.length - 1 && <div className="w-px h-full bg-emerald-deep/10" />}
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-emerald-deep">{event.message}</p>
+                            <p className="text-[10px] text-emerald-deep/40">{new Date(event.timestamp).toLocaleString()}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               ))}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="notifications" className="space-y-8">
+            <div className="bg-white p-8 rounded-[2.5rem] border border-emerald-deep/5 shadow-sm max-w-2xl">
+              <h3 className="font-heading font-bold text-2xl text-emerald-deep mb-6">Send Notification</h3>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">Target User</label>
+                  <select 
+                    className="w-full bg-emerald-deep/5 border-none rounded-2xl px-6 py-4 text-sm font-medium text-emerald-deep focus:ring-2 focus:ring-emerald-deep outline-none"
+                    value={notifTarget}
+                    onChange={(e) => setNotifTarget(e.target.value)}
+                  >
+                    <option value="all">Broadcast to All Users</option>
+                    {users.map(u => (
+                      <option key={u.uid} value={u.uid}>{u.displayName} ({u.email})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">Message</label>
+                  <textarea 
+                    className="w-full bg-emerald-deep/5 border-none rounded-2xl px-6 py-4 text-sm font-medium text-emerald-deep focus:ring-2 focus:ring-emerald-deep outline-none min-h-[120px]"
+                    placeholder="Enter your message here..."
+                    value={notifMessage}
+                    onChange={(e) => setNotifMessage(e.target.value)}
+                  />
+                </div>
+                <Button 
+                  className="w-full bg-emerald-deep text-white hover:bg-champagne h-14 rounded-2xl font-bold text-[10px] uppercase tracking-widest transition-all"
+                  onClick={() => {
+                    if (!notifMessage.trim()) return;
+                    onSendNotification(notifTarget, notifMessage, notifTarget === 'all' ? 'broadcast' : 'targeted');
+                    setNotifMessage('');
+                  }}
+                >
+                  Send Notification
+                </Button>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
@@ -1141,6 +1429,7 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [customDetails, setCustomDetails] = useState({ name: '', design: '' });
@@ -1168,6 +1457,11 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [orders, setOrders] = useState<Order[]>([]);
   const [allOrders, setAllOrders] = useState<Order[]>([]);
+  const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [prevOrdersCount, setPrevOrdersCount] = useState<number | null>(null);
+  const [prevCancelledCount, setPrevCancelledCount] = useState<number | null>(null);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [isOrdersOpen, setIsOrdersOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -1236,7 +1530,30 @@ export default function App() {
           }, (error) => {
             console.error('All orders subscription error:', error);
           });
+
+          // Fetch all users for admin
+          const qUsers = query(collection(db, 'users'));
+          onSnapshot(qUsers, (snapshot) => {
+            setAllUsers(snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as any as UserProfile)));
+          }, (error) => {
+            console.error('Users subscription error:', error);
+          });
         }
+
+        // Fetch notifications
+        const notificationTargets = [u.uid, 'all'];
+        if (isUserAdmin) notificationTargets.push('admin');
+        
+        const qNotif = query(
+          collection(db, 'notifications'), 
+          where('userId', 'in', notificationTargets),
+          orderBy('createdAt', 'desc')
+        );
+        onSnapshot(qNotif, (snapshot) => {
+          setNotifications(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any as AppNotification)));
+        }, (error) => {
+          console.error('Notifications subscription error:', error);
+        });
       } else {
         setIsAdmin(false);
         setOrders([]);
@@ -1310,6 +1627,66 @@ export default function App() {
     } catch (error) {
       console.error(error);
       toast.error('Failed to sign in.');
+    }
+  };
+
+  // Admin Real-time Alerts
+  useEffect(() => {
+    if (!isAdmin || allOrders.length === 0) return;
+
+    if (prevOrdersCount === null) {
+      setPrevOrdersCount(allOrders.length);
+      setPrevCancelledCount(allOrders.filter(o => o.status === 'cancelled').length);
+      return;
+    }
+
+    // New Order Alert
+    if (allOrders.length > prevOrdersCount) {
+      const newOrder = allOrders[0];
+      toast.info(`New Order Received!`, {
+        description: `Order #${newOrder.id.slice(-6).toUpperCase()} from ${newOrder.deliveryDetails.fullName}. Amount: Rs. ${newOrder.totalAmount}`,
+        duration: 5000,
+      });
+    }
+
+    // Cancellation Alert
+    const currentCancelledCount = allOrders.filter(o => o.status === 'cancelled').length;
+    if (currentCancelledCount > prevCancelledCount!) {
+      const cancelledOrder = allOrders.find(o => o.status === 'cancelled' && !allOrders.find(prev => prev.id === o.id && prev.status === 'cancelled'));
+      if (cancelledOrder) {
+        toast.error(`Order Cancelled!`, {
+          description: `Order #${cancelledOrder.id.slice(-6).toUpperCase()} was cancelled by ${cancelledOrder.deliveryDetails.fullName}.`,
+          duration: 5000,
+        });
+      }
+    }
+
+    setPrevOrdersCount(allOrders.length);
+    setPrevCancelledCount(currentCancelledCount);
+  }, [allOrders, isAdmin]);
+
+  const sendNotification = async (targetUserId: string, message: string, type: 'targeted' | 'broadcast') => {
+    if (!isAdmin) return;
+    try {
+      await addDoc(collection(db, 'notifications'), {
+        userId: targetUserId,
+        message,
+        type,
+        read: false,
+        createdAt: serverTimestamp(),
+        senderId: user?.uid
+      });
+      toast.success('Notification sent successfully');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, 'notifications');
+    }
+  };
+
+  const markNotificationAsRead = async (id: string) => {
+    try {
+      await updateDoc(doc(db, 'notifications', id), { read: true });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `notifications/${id}`);
     }
   };
 
@@ -1529,6 +1906,16 @@ export default function App() {
       const orderRef = await addDoc(collection(db, 'orders'), orderData);
       const orderId = orderRef.id;
 
+      // Notify Admin
+      await addDoc(collection(db, 'notifications'), {
+        userId: 'admin',
+        message: `New Order Received! Order #${orderId.slice(-6).toUpperCase()} from ${deliveryDetails.fullName}. Amount: Rs. ${totalAmount}`,
+        type: 'targeted',
+        read: false,
+        createdAt: serverTimestamp(),
+        senderId: user.uid
+      });
+
       if (method === 'cod') {
         setCart([]);
         setIsOrderModalOpen(false);
@@ -1636,9 +2023,42 @@ export default function App() {
       const orderRef = doc(db, 'orders', orderId);
       await updateDoc(orderRef, {
         status: newStatus,
-        timeline: [...order.timeline, newTimelineEvent]
+        timeline: arrayUnion(newTimelineEvent)
       });
+
+      // Send notification to user
+      await addDoc(collection(db, 'notifications'), {
+        userId: order.userId,
+        message: `Your order #${orderId.slice(-6).toUpperCase()} status has been updated to: ${newStatus.toUpperCase()}. ${statusMessages[newStatus]}`,
+        type: 'targeted',
+        read: false,
+        createdAt: serverTimestamp(),
+        senderId: user?.uid
+      });
+
       toast.success(`Order status updated to ${newStatus}`);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `orders/${orderId}`);
+    }
+  };
+
+  const updatePaymentStatus = async (orderId: string, newStatus: 'paid' | 'unpaid') => {
+    if (!isAdmin) return;
+    
+    const order = allOrders.find(o => o.id === orderId);
+    if (!order) return;
+
+    try {
+      const orderRef = doc(db, 'orders', orderId);
+      await updateDoc(orderRef, {
+        paymentStatus: newStatus,
+        timeline: arrayUnion({
+          status: order.status,
+          timestamp: new Date().toISOString(),
+          message: `Payment status updated to ${newStatus.toUpperCase()} by admin.`
+        })
+      });
+      toast.success(`Payment status updated to ${newStatus}`);
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `orders/${orderId}`);
     }
@@ -1682,7 +2102,19 @@ export default function App() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
           setView={setActiveView}
+          onOpenNotifications={() => setIsNotificationsOpen(!isNotificationsOpen)}
+          unreadNotifications={notifications.filter(n => !n.read).length}
         />
+
+        {isNotificationsOpen && (
+          <div className="fixed top-24 right-6 z-[60] animate-in fade-in slide-in-from-top-4 duration-300">
+            <NotificationInbox 
+              notifications={notifications}
+              onMarkAsRead={markNotificationAsRead}
+              onClose={() => setIsNotificationsOpen(false)}
+            />
+          </div>
+        )}
 
         <CartNotification 
           isOpen={showCartNotification}
@@ -1713,37 +2145,36 @@ export default function App() {
                     transition={{ duration: 0.2 }}
                   >
                     {/* Hero Section */}
-                    <section className="relative h-[70vh] md:h-[85vh] min-h-[500px] md:min-h-[700px] w-full mb-12 md:mb-24 rounded-[3rem] md:rounded-[4rem] overflow-hidden group shadow-2xl">
+                    <section className="relative h-[70vh] md:h-[85vh] w-full mb-16 md:mb-24 rounded-3xl md:rounded-[4rem] overflow-hidden group shadow-2xl">
                       <img 
                         src="https://images.unsplash.com/photo-1535141192574-5d4897c12636?auto=format&fit=crop&q=80&w=2000" 
                         alt="Luxury Cake" 
                         className="absolute inset-0 h-full w-full object-cover transition-transform duration-[3s] group-hover:scale-110"
                         referrerPolicy="no-referrer"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-r from-emerald-deep/90 via-emerald-deep/40 to-transparent flex items-center px-8 md:px-24">
+                      <div className="absolute inset-0 bg-gradient-to-r from-emerald-deep/80 via-emerald-deep/20 to-transparent flex items-center px-8 md:px-24">
                         <div className="max-w-3xl">
                           <motion.div
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2, duration: 1, ease: "easeOut" }}
                           >
-                            <Badge className="bg-champagne text-emerald-deep border-none mb-6 md:mb-8 font-bold tracking-[0.4em] px-4 py-1.5 text-[10px] md:text-xs rounded-full">COLLECTION 2026</Badge>
-                            <h2 className="text-5xl sm:text-6xl md:text-9xl font-heading font-medium text-white mb-8 md:mb-10 leading-[0.85] tracking-tighter">
-                              Pure <br /> <span className="italic text-champagne">Artistry</span> <br /> in Every Bite.
+                            <h2 className="text-5xl sm:text-7xl md:text-[10rem] font-heading font-medium text-white mb-6 md:mb-10 leading-[0.8] tracking-tighter">
+                              in Every <br /> <span className="italic text-champagne">Bite.</span>
                             </h2>
                             <p className="text-white/90 text-lg md:text-2xl font-light mb-10 md:mb-14 max-w-xl leading-relaxed">
                               Where single-origin chocolate meets centuries-old craftsmanship. Hand-delivered to your doorstep in Kathmandu.
                             </p>
-                            <div className="flex flex-wrap gap-6 md:gap-8">
+                            <div className="flex flex-wrap gap-4 md:gap-8">
                               <Button 
-                                className="bg-champagne hover:bg-white text-emerald-deep h-16 md:h-20 px-10 md:px-14 rounded-full font-bold text-xs md:text-base uppercase tracking-widest shadow-2xl shadow-champagne/30 transition-all hover:scale-105 active:scale-95"
+                                className="bg-champagne hover:bg-white text-emerald-deep h-14 md:h-20 px-8 md:px-14 rounded-full font-bold text-sm md:text-base uppercase tracking-widest shadow-2xl shadow-champagne/30 transition-all hover:scale-105 active:scale-95"
                                 onClick={() => document.getElementById('cakes')?.scrollIntoView({ behavior: 'smooth' })}
                               >
                                 Shop Collection
                               </Button>
                               <Button 
                                 variant="outline"
-                                className="border-white/40 text-white hover:bg-white/10 h-16 md:h-20 px-10 md:px-14 rounded-full font-bold text-xs md:text-base uppercase tracking-widest backdrop-blur-md transition-all hover:border-white"
+                                className="border-white/40 text-white hover:bg-white/10 h-14 md:h-20 px-8 md:px-14 rounded-full font-bold text-sm md:text-base uppercase tracking-widest backdrop-blur-md transition-all hover:border-white"
                               >
                                 Our Heritage
                               </Button>
@@ -1757,16 +2188,16 @@ export default function App() {
                     
                     {/* Product Section */}
                     <section id="cakes" className="px-0 md:px-0">
-                      <div className="mb-12 md:mb-20 flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+                      <div className="mb-12 md:mb-24 flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
                         <div className="space-y-4">
-                          <h3 className="text-4xl md:text-6xl font-heading font-medium text-emerald-deep leading-none">Signature <br /><span className="italic text-champagne">Creations</span></h3>
-                          <p className="text-xs md:text-sm font-bold text-emerald-deep/40 uppercase tracking-[0.4em]">Curated for your finest moments</p>
+                          <h3 className="text-4xl md:text-8xl font-heading font-medium text-emerald-deep leading-none">Signature <br /><span className="italic text-champagne">Creations</span></h3>
+                          <p className="text-[10px] md:text-xs font-bold text-emerald-deep/30 uppercase tracking-[0.5em]">Curated for your finest moments</p>
                         </div>
-                        <div className="relative w-full md:w-[450px]">
-                          <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-emerald-deep/30" />
+                        <div className="relative w-full md:w-[400px]">
+                          <Search className="absolute left-6 top-1/2 h-5 w-5 -translate-y-1/2 text-emerald-deep/20" />
                           <Input 
                             placeholder="Search our collection..." 
-                            className="pl-14 w-full bg-white border-emerald-deep/5 shadow-xl h-14 md:h-18 rounded-2xl md:rounded-3xl focus:ring-champagne text-lg" 
+                            className="pl-16 w-full bg-[#f3f3f0] border-none shadow-none h-16 md:h-20 rounded-3xl focus:ring-emerald-deep/10 text-lg font-medium text-emerald-deep placeholder:text-emerald-deep/20" 
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                           />
@@ -1786,61 +2217,125 @@ export default function App() {
                       </div>
                     </section>
 
-                    {/* Features & Trust Section */}
+                    {/* The Process Section */}
                     <section className="mt-32 mb-20">
-                      <div className="grid gap-8 grid-cols-1 md:grid-cols-3">
-                        <div className="bg-white p-10 rounded-[3rem] border border-maroon/5 shadow-sm flex flex-col items-center text-center gap-6 transition-all hover:shadow-xl group">
-                          <div className="h-20 w-20 rounded-full bg-maroon/5 flex items-center justify-center transition-transform group-hover:scale-110">
-                            <Truck className="h-10 w-10 text-maroon" strokeWidth={1} />
+                      <div className="text-center mb-20 space-y-4">
+                        <p className="text-[10px] font-bold text-emerald-deep/30 uppercase tracking-[0.6em]">The Process</p>
+                        <h3 className="text-5xl md:text-7xl font-heading font-medium text-emerald-deep italic">Crafted with <br /> Obsessive Care</h3>
+                      </div>
+                      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                        {[
+                          { title: 'You Envision', desc: 'Share your dream - the occasion, theme, flavour, and any special touches you have in mind.', icon: ImageIcon },
+                          { title: 'We Design', desc: 'Our master bakers sketch and propose a bespoke design tailored to your vision.', icon: Edit3 },
+                          { title: 'Baked Fresh', desc: 'Every layer is baked fresh on the morning of delivery, using organic, locally sourced ingredients.', icon: CakeIcon },
+                          { title: 'Delivered Perfectly', desc: 'White-glove, temperature-controlled delivery ensures your cake arrives in pristine condition.', icon: Truck },
+                        ].map((step, i) => (
+                          <div key={i} className="bg-white p-8 md:p-10 rounded-3xl md:rounded-[2.5rem] border border-emerald-deep/5 shadow-sm flex flex-col gap-6 group hover:shadow-xl transition-all duration-500">
+                            <div className="h-16 w-16 rounded-2xl bg-[#f3f3f0] flex items-center justify-center text-emerald-deep group-hover:bg-emerald-deep group-hover:text-white transition-all duration-500">
+                              <step.icon className="h-8 w-8" strokeWidth={1} />
+                            </div>
+                            <div className="space-y-3">
+                              <h4 className="text-xl font-heading font-bold text-emerald-deep">{step.title}</h4>
+                              <p className="text-xs text-emerald-deep/50 leading-relaxed font-medium">{step.desc}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+
+                    {/* Features & Trust Section */}
+                    <section className="mt-20 md:mt-32 mb-16 md:mb-20">
+                      <div className="grid gap-6 md:gap-8 grid-cols-1 md:grid-cols-3">
+                        <div className="bg-[#f3f3f0] p-8 md:p-10 rounded-3xl md:rounded-[3rem] border border-emerald-deep/5 shadow-sm flex flex-col items-center text-center gap-6 transition-all hover:shadow-xl group">
+                          <div className="h-20 w-20 rounded-full bg-white flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm">
+                            <Truck className="h-10 w-10 text-emerald-deep" strokeWidth={1} />
                           </div>
                           <div>
-                            <h3 className="text-xl font-heading font-bold text-maroon">Concierge Delivery</h3>
-                            <p className="text-xs text-muted-foreground mt-3 leading-relaxed font-medium">Hand-delivered with white-glove care to preserve every delicate detail.</p>
+                            <h3 className="text-xl font-heading font-bold text-emerald-deep">Concierge Delivery</h3>
+                            <p className="text-xs text-emerald-deep/50 mt-3 leading-relaxed font-medium">Hand-delivered with white-glove care to preserve every delicate detail.</p>
                           </div>
                         </div>
-                        <div className="bg-white p-10 rounded-[3rem] border border-maroon/5 shadow-sm flex flex-col items-center text-center gap-6 transition-all hover:shadow-xl group">
-                          <div className="h-20 w-20 rounded-full bg-maroon/5 flex items-center justify-center transition-transform group-hover:scale-110">
-                            <Star className="h-10 w-10 text-maroon" strokeWidth={1} />
+                        <div className="bg-[#f3f3f0] p-8 md:p-10 rounded-3xl md:rounded-[3rem] border border-emerald-deep/5 shadow-sm flex flex-col items-center text-center gap-6 transition-all hover:shadow-xl group">
+                          <div className="h-20 w-20 rounded-full bg-white flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm">
+                            <Star className="h-10 w-10 text-emerald-deep" strokeWidth={1} />
                           </div>
                           <div>
-                            <h3 className="text-xl font-heading font-bold text-maroon">Artisan Ingredients</h3>
-                            <p className="text-xs text-muted-foreground mt-3 leading-relaxed font-medium">We source single-origin cocoa and organic dairy for an unparalleled taste.</p>
+                            <h3 className="text-xl font-heading font-bold text-emerald-deep">Artisan Ingredients</h3>
+                            <p className="text-xs text-emerald-deep/50 mt-3 leading-relaxed font-medium">We source single-origin cocoa and organic dairy for an unparalleled taste.</p>
                           </div>
                         </div>
-                        <div className="bg-white p-10 rounded-[3rem] border border-maroon/5 shadow-sm flex flex-col items-center text-center gap-6 transition-all hover:shadow-xl group">
-                          <div className="h-20 w-20 rounded-full bg-maroon/5 flex items-center justify-center transition-transform group-hover:scale-110">
-                            <Zap className="h-10 w-10 text-maroon" strokeWidth={1} />
+                        <div className="bg-[#f3f3f0] p-8 md:p-10 rounded-3xl md:rounded-[3rem] border border-emerald-deep/5 shadow-sm flex flex-col items-center text-center gap-6 transition-all hover:shadow-xl group">
+                          <div className="h-20 w-20 rounded-full bg-white flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm">
+                            <CheckCircle2 className="h-10 w-10 text-emerald-deep" strokeWidth={1} />
                           </div>
                           <div>
-                            <h3 className="text-xl font-heading font-bold text-maroon">Secure Experience</h3>
-                            <p className="text-xs text-muted-foreground mt-3 leading-relaxed font-medium">Seamless and encrypted transactions via Nepal's leading payment gateways.</p>
+                            <h3 className="text-xl font-heading font-bold text-emerald-deep">Satisfaction Guaranteed</h3>
+                            <p className="text-xs text-emerald-deep/50 mt-3 leading-relaxed font-medium">Not happy? We'll make it right. Your perfect celebration moment is our promise.</p>
                           </div>
                         </div>
                       </div>
                     </section>
 
+                    {/* Testimonials Section */}
+                    <section className="mt-20 md:mt-32 mb-16 md:mb-20">
+                      <div className="text-center mb-12 md:mb-20 space-y-4">
+                        <p className="text-[10px] font-bold text-emerald-deep/30 uppercase tracking-[0.6em]">Testimonials</p>
+                        <h3 className="text-3xl md:text-7xl font-heading font-medium text-emerald-deep italic">Words From Our <br /> Happy Clients</h3>
+                      </div>
+                      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                        {[
+                          { name: 'Priya Sharma', loc: 'Lazimpat, KTM', text: 'Absolutely stunning wedding cake. Every guest kept complimenting it. The craftsmanship was beyond anything I could have imagined – worth every paisa.' },
+                          { name: 'Rohan Thapa', loc: 'Patan, Lalitpur', text: 'Ordered a birthday cake for my mother. Arrived perfectly on time, tasted incredible, and looked exactly like the design I requested. Will order again!' },
+                          { name: 'Sujata Rai', loc: 'Baneshwor, KTM', text: 'The anniversary cake was a masterpiece. My husband was moved to tears. Koseli has become our family\'s go-to for every occasion.' },
+                          { name: 'Arjun K.C.', loc: 'Thamel, KTM', text: 'The Celebration Combo Box was an absolute hit at our office party. Premium presentation, rich flavours. Highly recommend the dark chocolate truffle.' },
+                          { name: 'Nisha Bajracharya', loc: 'Jhamsikhel, Lalitpur', text: 'I\'ve ordered four times now and every cake has been perfect. The custom ordering process is so elegant. Koseli has a customer for life.' },
+                          { name: 'Bikash Gurung', loc: 'Pokhara (Delivery to KTM)', text: 'Delivered all the way to Pokhara in perfect condition. The Red Velvet was the best I\'ve ever had. Koseli\'s service is truly world-class.' },
+                        ].map((t, i) => (
+                          <div key={i} className="bg-white p-8 md:p-10 rounded-3xl md:rounded-[2.5rem] border border-emerald-deep/5 shadow-sm space-y-6 flex flex-col justify-between group hover:shadow-xl transition-all duration-500">
+                            <div className="space-y-4">
+                              <div className="flex gap-1">
+                                {[...Array(5)].map((_, i) => <Star key={i} className="h-3 w-3 fill-champagne text-champagne" />)}
+                              </div>
+                              <p className="text-sm text-emerald-deep/70 leading-relaxed font-medium italic">"{t.text}"</p>
+                            </div>
+                            <div className="flex items-center gap-4 pt-6 border-t border-emerald-deep/5">
+                              <div className="h-12 w-12 rounded-full bg-emerald-deep/5 flex items-center justify-center font-bold text-emerald-deep">{t.name[0]}</div>
+                              <div>
+                                <h4 className="text-sm font-bold text-emerald-deep">{t.name}</h4>
+                                <p className="text-[10px] text-emerald-deep/40 font-bold uppercase tracking-widest">{t.loc}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+
                     {/* Brand Story Section */}
-                    <section className="bg-maroon text-white p-12 md:p-24 rounded-[4rem] my-32 relative overflow-hidden shadow-2xl">
-                      <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-[600px] h-[600px] bg-gold/5 rounded-full blur-[120px]" />
-                      <div className="relative z-10 grid md:grid-cols-2 gap-20 items-center">
+                    <section className="bg-emerald-deep text-white p-8 md:p-24 rounded-3xl md:rounded-[4rem] my-20 md:my-32 relative overflow-hidden shadow-2xl">
+                      <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-[600px] h-[600px] bg-white/5 rounded-full blur-[120px]" />
+                      <div className="relative z-10 grid md:grid-cols-2 gap-12 md:gap-20 items-center">
                         <div>
-                          <Badge className="bg-gold text-white border-none mb-8 font-bold tracking-[0.3em] px-4 py-1">OUR PHILOSOPHY</Badge>
-                          <h2 className="text-5xl md:text-7xl font-heading font-light text-gold mb-8 leading-tight italic">Baking Memories, <br /> One Masterpiece at a Time.</h2>
-                          <p className="text-white/60 text-lg leading-relaxed mb-12 font-light">
+                          <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.6em] mb-6 md:mb-8">Our Philosophy</p>
+                          <h2 className="text-4xl md:text-8xl font-heading font-light text-white mb-8 md:mb-10 leading-[0.9] italic">Baking Memories, <br /> One Masterpiece <br /> at a Time.</h2>
+                          <p className="text-white/60 text-base md:text-lg leading-relaxed mb-10 md:mb-14 font-light max-w-lg">
                             At Koseli, we believe every celebration deserves a centerpiece as unique as the moment itself. Our master bakers craft each cake with precision, passion, and the finest ingredients sourced from around the globe.
                           </p>
-                          <div className="flex gap-12">
+                          <div className="grid grid-cols-2 sm:flex sm:gap-16 gap-8">
                             <div>
-                              <p className="text-5xl font-heading font-bold text-gold">5k+</p>
-                              <p className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-40 mt-2">Cakes Baked</p>
+                              <p className="text-4xl md:text-6xl font-heading font-bold text-white">5k+</p>
+                              <p className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-40 mt-3">Cakes Baked</p>
                             </div>
                             <div>
-                              <p className="text-5xl font-heading font-bold text-gold">4.9</p>
-                              <p className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-40 mt-2">Client Rating</p>
+                              <p className="text-4xl md:text-6xl font-heading font-bold text-white">4.9</p>
+                              <p className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-40 mt-3">Avg. Rating</p>
+                            </div>
+                            <div className="col-span-2 sm:col-span-1">
+                              <p className="text-4xl md:text-6xl font-heading font-bold text-white">6yrs</p>
+                              <p className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-40 mt-3">Of Excellence</p>
                             </div>
                           </div>
                         </div>
-                        <div className="relative aspect-square rounded-[3rem] overflow-hidden shadow-2xl rotate-3">
+                        <div className="relative aspect-[4/5] rounded-3xl md:rounded-[3rem] overflow-hidden shadow-2xl rotate-2">
                           <img 
                             src="https://images.unsplash.com/photo-1516738901171-8eb4fc13bd20?auto=format&fit=crop&q=80&w=1000" 
                             alt="Bakery Process" 
@@ -2135,6 +2630,7 @@ export default function App() {
                     <AdminDashboard 
                       products={products}
                       orders={allOrders}
+                      users={allUsers}
                       onAddProduct={() => {
                         setEditingProduct(null);
                         setProductFormData({
@@ -2164,6 +2660,8 @@ export default function App() {
                       onDeleteProduct={handleDeleteProduct}
                       onToggleStock={toggleStock}
                       onUpdateOrderStatus={updateOrderStatus}
+                      onUpdatePaymentStatus={updatePaymentStatus}
+                      onSendNotification={sendNotification}
                       onBack={() => setActiveView('home')}
                     />
                   </motion.div>
@@ -2185,73 +2683,149 @@ export default function App() {
         </Routes>
 
         {activeView === 'home' && (
-          <footer className="bg-maroon text-white pt-32 pb-12">
+          <footer className="bg-emerald-deep text-white pt-24 pb-12">
             <div className="container mx-auto px-6">
-              <div className="flex flex-col items-center text-center gap-12">
-                <div className="flex flex-col items-center">
-                  <span className="text-5xl font-bold tracking-[-0.05em] font-heading text-gold leading-none">KOSELI</span>
-                  <span className="text-[11px] font-bold tracking-[0.5em] text-white/40 uppercase mt-4 italic">The Art of Bespoke Baking</span>
+              {/* Newsletter Section */}
+              <div className="bg-white/5 rounded-3xl md:rounded-[3rem] p-8 md:p-20 mb-16 md:mb-24 border border-white/10 relative overflow-hidden">
+                <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-white/5 rounded-full blur-[80px]" />
+                <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-10 md:gap-12">
+                  <div className="max-w-xl text-center lg:text-left space-y-4">
+                    <p className="text-[10px] font-bold text-white/40 uppercase tracking-[0.6em]">Exclusive Updates</p>
+                    <h3 className="text-3xl md:text-6xl font-heading font-medium text-white italic">Be First to Know About <br /> Seasonal Collections</h3>
+                  </div>
+                  <div className="w-full lg:w-auto flex flex-col sm:flex-row gap-4">
+                    <Input 
+                      placeholder="your@email.com" 
+                      className="bg-white/10 border-white/10 h-14 md:h-20 px-6 md:px-8 rounded-xl md:rounded-full min-w-full sm:min-w-[300px] text-base md:text-lg focus:ring-white/20 text-white placeholder:text-white/20" 
+                    />
+                    <Button className="bg-white text-emerald-deep hover:bg-champagne h-14 md:h-20 px-10 md:px-12 rounded-xl md:rounded-full font-bold text-xs uppercase tracking-widest transition-all">
+                      Subscribe
+                    </Button>
+                  </div>
                 </div>
-                
-                <nav className="flex flex-wrap justify-center gap-x-12 gap-y-6">
-                  <button onClick={() => { setActiveView('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-xs font-bold text-white/60 hover:text-gold transition-colors uppercase tracking-[0.3em]">Home</button>
-                  <button onClick={() => document.getElementById('cakes')?.scrollIntoView({ behavior: 'smooth' })} className="text-xs font-bold text-white/60 hover:text-gold transition-colors uppercase tracking-[0.3em]">Collection</button>
-                  <button onClick={() => user ? setActiveView('orders') : setIsAuthOpen(true)} className="text-xs font-bold text-white/60 hover:text-gold transition-colors uppercase tracking-[0.3em]">Orders</button>
-                  <button onClick={() => user ? setActiveView('profile') : setIsAuthOpen(true)} className="text-xs font-bold text-white/60 hover:text-gold transition-colors uppercase tracking-[0.3em]">Account</button>
-                </nav>
+              </div>
 
-                <div className="flex gap-8">
-                  <a href="tel:+9779800000000" className="h-14 w-14 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-gold hover:border-gold hover:text-maroon transition-all duration-500">
-                    <Phone className="h-5 w-5" strokeWidth={1.5} />
-                  </a>
-                  <a href="https://maps.app.goo.gl/H9sazuEJS5RE7i5K9" target="_blank" rel="noopener noreferrer" className="h-14 w-14 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-gold hover:border-gold hover:text-maroon transition-all duration-500">
-                    <MapPin className="h-5 w-5" strokeWidth={1.5} />
-                  </a>
-                  <a href="#" className="h-14 w-14 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-gold hover:border-gold hover:text-maroon transition-all duration-500">
-                    <Clock className="h-5 w-5" strokeWidth={1.5} />
-                  </a>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-16 mb-16 md:mb-24">
+                <div className="space-y-8">
+                  <div className="flex flex-col">
+                    <span className="text-4xl font-bold tracking-[-0.05em] font-heading text-white leading-none">KOSELI</span>
+                    <span className="text-[9px] font-bold tracking-[0.4em] text-white/30 uppercase mt-3 italic">Artisan Bakery</span>
+                  </div>
+                  <p className="text-white/40 text-sm leading-relaxed font-light">
+                    Handcrafting celebration cakes for Kathmandu\'s most cherished moments since 2020.
+                  </p>
+                  <div className="flex gap-6">
+                    {['IG', 'FB', 'TW'].map(s => (
+                      <a key={s} href="#" className="text-[10px] font-bold text-white/30 hover:text-white transition-colors uppercase tracking-widest">{s}</a>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="w-full max-w-2xl rounded-3xl overflow-hidden border border-white/5 h-64 shadow-2xl">
-                  <iframe 
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d601.7841111984694!2d80.12693025383912!3d28.96202918741089!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39a1ab006ca049cd%3A0xdae0567f45a5bbf4!2skoseli%20cake%20shop!5e0!3m2!1sen!2sus!4v1776066286313!5m2!1sen!2sus" 
-                    width="100%" 
-                    height="100%" 
-                    style={{ border: 0 }} 
-                    allowFullScreen={true} 
-                    loading="lazy" 
-                    referrerPolicy="no-referrer-when-downgrade"
-                  ></iframe>
+                <div className="space-y-8">
+                  <h4 className="text-[10px] font-bold text-white/30 uppercase tracking-[0.4em]">Navigate</h4>
+                  <nav className="flex flex-col gap-4">
+                    <button onClick={() => { setActiveView('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-sm font-medium text-white/60 hover:text-white transition-colors text-left">Home</button>
+                    <button onClick={() => document.getElementById('cakes')?.scrollIntoView({ behavior: 'smooth' })} className="text-sm font-medium text-white/60 hover:text-white transition-colors text-left">Collection</button>
+                    <button onClick={() => user ? setActiveView('orders') : setIsAuthOpen(true)} className="text-sm font-medium text-white/60 hover:text-white transition-colors text-left">My Orders</button>
+                    <button onClick={() => user ? setActiveView('profile') : setIsAuthOpen(true)} className="text-sm font-medium text-white/60 hover:text-white transition-colors text-left">My Account</button>
+                  </nav>
                 </div>
 
-                <div className="w-full max-w-4xl">
-                  <Separator className="bg-white/5" />
-                  <div className="flex flex-col md:flex-row items-center justify-between gap-8 py-12 text-[10px] font-bold text-white/20 uppercase tracking-[0.4em]">
-                    <p>© 2026 KOSELI CAKE SHOP. ALL RIGHTS RESERVED.</p>
-                    <div className="flex gap-10">
-                      <a href="#" className="hover:text-gold transition-colors">Privacy Policy</a>
-                      <a href="#" className="hover:text-gold transition-colors">Terms of Service</a>
+                <div className="space-y-8">
+                  <h4 className="text-[10px] font-bold text-white/30 uppercase tracking-[0.4em]">Contact</h4>
+                  <div className="space-y-6">
+                    <div className="flex gap-4">
+                      <MapPin className="h-5 w-5 text-white/20 shrink-0" />
+                      <p className="text-sm text-white/60 font-medium">Thamel Marg, Kathmandu <br /> Bagmati Province, Nepal</p>
+                    </div>
+                    <div className="flex gap-4">
+                      <Phone className="h-5 w-5 text-white/20 shrink-0" />
+                      <p className="text-sm text-white/60 font-medium">+977 98-0000-0000</p>
+                    </div>
+                    <div className="flex gap-4">
+                      <Clock className="h-5 w-5 text-white/20 shrink-0" />
+                      <p className="text-sm text-white/60 font-medium">Daily 7:00 AM - 9:00 PM</p>
                     </div>
                   </div>
+                </div>
+
+                <div className="space-y-8">
+                  <h4 className="text-[10px] font-bold text-white/30 uppercase tracking-[0.4em]">Order Directly</h4>
+                  <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white h-16 rounded-2xl font-bold flex items-center justify-center gap-3 shadow-xl shadow-emerald-500/10">
+                    <Phone className="h-5 w-5" />
+                    <div className="text-left">
+                      <p className="text-[8px] uppercase tracking-widest opacity-60">Order via</p>
+                      <p className="text-sm">WhatsApp</p>
+                    </div>
+                  </Button>
+                  <div className="bg-white/5 p-6 rounded-2xl border border-white/10">
+                    <p className="text-[10px] text-white/40 font-medium leading-relaxed">
+                      Make, test, locate... <br /> Delivery Policy linked
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+                <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.4em]">© 2026 KOSELI ARTISAN BAKERY</p>
+                <div className="flex gap-8">
+                  {['Privacy Policy', 'Terms of Service', 'Delivery Policy'].map(p => (
+                    <a key={p} href="#" className="text-[10px] font-bold text-white/20 hover:text-white transition-colors uppercase tracking-widest">{p}</a>
+                  ))}
                 </div>
               </div>
             </div>
           </footer>
         )}
 
-      {activeView !== 'cart' && (
-        <BottomNav 
-          cartCount={cart.length} 
-          onOpenCart={() => setActiveView('cart')} 
-          onOpenAuth={() => setIsAuthOpen(true)}
-          user={user}
-          onOpenOrders={() => setActiveView('orders')}
-          onOpenProfile={() => setActiveView('profile')}
-          activeView={activeView}
-          setView={setActiveView}
-          isAdmin={isAdmin}
-        />
-      )}
+      <BottomNav 
+        cartCount={cart.length} 
+        onOpenCart={() => setActiveView('cart')} 
+        onOpenAuth={() => setIsAuthOpen(true)}
+        user={user}
+        onOpenOrders={() => setActiveView('orders')}
+        onOpenProfile={() => setActiveView('profile')}
+        activeView={activeView}
+        setView={setActiveView}
+        isAdmin={isAdmin}
+      />
+
+      {/* Floating Action Button (FAB) - Distinct Hover Feature */}
+      <div className="fixed bottom-32 right-6 md:right-12 z-50 flex flex-col gap-4">
+        <AnimatePresence>
+          {cart.length > 0 && activeView !== 'cart' && (
+            <motion.button
+              initial={{ scale: 0, opacity: 0, x: 50 }}
+              animate={{ scale: 1, opacity: 1, x: 0 }}
+              exit={{ scale: 0, opacity: 0, x: 50 }}
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setActiveView('cart')}
+              className="h-14 w-14 md:h-16 md:w-16 bg-coral text-white rounded-full shadow-[0_20px_40px_rgba(255,107,107,0.4)] flex items-center justify-center relative group border-4 border-white"
+            >
+              <ShoppingBag className="h-6 w-6 md:h-7 md:w-7" />
+              <span className="absolute -top-2 -right-2 bg-emerald-deep text-white text-[10px] font-bold h-6 w-6 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
+                {cart.length}
+              </span>
+              <div className="absolute right-full mr-4 bg-emerald-deep text-white text-[10px] font-bold py-2 px-4 rounded-xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap shadow-2xl translate-x-4 group-hover:translate-x-0">
+                View Collection ({cart.length})
+              </div>
+            </motion.button>
+          )}
+        </AnimatePresence>
+
+        <motion.button
+          whileHover={{ scale: 1.1, rotate: -5 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="h-14 w-14 md:h-16 md:w-16 bg-white text-emerald-deep rounded-full shadow-[0_20px_40px_rgba(0,0,0,0.1)] flex items-center justify-center border border-emerald-deep/5 group"
+        >
+          <ChevronUp className="h-6 w-6 md:h-7 md:w-7 transition-transform group-hover:-translate-y-1" />
+          <div className="absolute right-full mr-4 bg-emerald-deep text-white text-[10px] font-bold py-2 px-4 rounded-xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap shadow-2xl translate-x-4 group-hover:translate-x-0">
+            Scroll to Top
+          </div>
+        </motion.button>
+      </div>
 
       {/* Auth Dialog */}
       <Dialog open={isAuthOpen} onOpenChange={setIsAuthOpen}>
@@ -2364,12 +2938,12 @@ export default function App() {
 
       {/* Checkout Dialog */}
       <Dialog open={isOrderModalOpen} onOpenChange={setIsOrderModalOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col overflow-hidden rounded-3xl">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[500px] w-[95vw] max-h-[90vh] flex flex-col overflow-hidden rounded-3xl p-0 border-none">
+          <DialogHeader className="p-6 pb-0">
             <DialogTitle>Delivery Details</DialogTitle>
             <DialogDescription>Please provide your delivery information.</DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-maroon/60">Delivery Method</Label>
@@ -2555,28 +3129,171 @@ export default function App() {
               </div>
               
               <Separator className="my-2 bg-maroon/10" />
-              <h4 className="font-bold text-maroon text-[10px] uppercase tracking-[0.2em] mb-2">Select Payment Method</h4>
-              <div className="grid grid-cols-2 gap-4 pb-8">
-                <Button variant="outline" className="h-24 flex-col gap-3 rounded-2xl border-maroon/10 hover:border-maroon/30 hover:bg-maroon/5 transition-all group" onClick={() => processPayment('esewa')}>
+              <Button 
+                className="w-full bg-emerald-deep hover:bg-emerald-deep/90 text-white h-16 rounded-2xl font-bold text-xs uppercase tracking-widest shadow-xl shadow-emerald-deep/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                onClick={() => {
+                  const errors: { [key: string]: string } = {};
+                  if (!deliveryDetails.fullName.trim()) errors.fullName = 'Full Name is required';
+                  if (!deliveryDetails.phone.trim()) errors.phone = 'Phone Number is required';
+                  if (deliveryDetails.deliveryMethod !== 'pickup' && !deliveryDetails.address.trim()) errors.address = 'Delivery Address is required';
+
+                  if (Object.keys(errors).length > 0) {
+                    setFormErrors(errors);
+                    toast.error('Please fill in all required fields');
+                    return;
+                  }
+                  setFormErrors({});
+                  setIsOrderModalOpen(false);
+                  setIsConfirmationOpen(true);
+                }}
+              >
+                Review Order Details
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Order Confirmation Dialog */}
+      <Dialog open={isConfirmationOpen} onOpenChange={setIsConfirmationOpen}>
+        <DialogContent className="sm:max-w-[500px] w-[95vw] max-h-[90vh] flex flex-col overflow-hidden rounded-[2.5rem] p-0 border-none shadow-2xl">
+          <div className="bg-emerald-deep p-6 md:p-8 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+            <DialogHeader className="relative z-10">
+              <DialogTitle className="text-xl md:text-2xl font-heading italic">Review Your Order</DialogTitle>
+              <DialogDescription className="text-white/60 text-xs">Please confirm your details before proceeding.</DialogDescription>
+            </DialogHeader>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar space-y-6 md:space-y-8">
+            {/* Items Summary */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-deep uppercase tracking-[0.2em]">
+                <ShoppingBag className="h-3 w-3" />
+                <span>Order Summary</span>
+              </div>
+              <div className="space-y-3">
+                {cart.map((item, idx) => (
+                  <div key={idx} className="flex justify-between items-center text-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-emerald-deep/5 flex items-center justify-center text-emerald-deep font-bold text-xs">
+                        {item.quantity}x
+                      </div>
+                      <span className="font-medium text-gray-700">{item.name}</span>
+                    </div>
+                    <span className="font-bold text-emerald-deep">Rs. {item.price * item.quantity}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <Separator className="bg-emerald-deep/5" />
+
+            {/* Delivery Info */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-deep uppercase tracking-[0.2em]">
+                <Truck className="h-3 w-3" />
+                <span>Delivery Information</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4 md:gap-6 bg-emerald-deep/5 p-4 md:p-6 rounded-2xl border border-emerald-deep/10">
+                <div className="space-y-1">
+                  <p className="text-[8px] font-bold text-emerald-deep/40 uppercase tracking-widest">Customer</p>
+                  <p className="text-sm font-bold text-emerald-deep">{deliveryDetails.fullName}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[8px] font-bold text-emerald-deep/40 uppercase tracking-widest">Contact</p>
+                  <p className="text-sm font-bold text-emerald-deep">{deliveryDetails.phone}</p>
+                </div>
+                <div className="col-span-2 space-y-1">
+                  <p className="text-[8px] font-bold text-emerald-deep/40 uppercase tracking-widest">
+                    {deliveryDetails.deliveryMethod === 'pickup' ? 'Pickup Location' : 'Delivery Address'}
+                  </p>
+                  <p className="text-sm font-bold text-emerald-deep">
+                    {deliveryDetails.deliveryMethod === 'pickup' ? 'Koseli Artisan Bakery, Thamel' : deliveryDetails.address}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[8px] font-bold text-emerald-deep/40 uppercase tracking-widest">Scheduled Date</p>
+                  <p className="text-sm font-bold text-emerald-deep">{deliveryDetails.deliveryDate}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[8px] font-bold text-emerald-deep/40 uppercase tracking-widest">Preferred Time</p>
+                  <p className="text-sm font-bold text-emerald-deep">{deliveryDetails.deliveryTime}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Total */}
+            <div className="bg-emerald-deep text-white p-4 md:p-6 rounded-2xl flex items-center justify-between shadow-lg shadow-emerald-deep/20">
+              <div className="space-y-1">
+                <p className="text-[8px] font-bold text-white/40 uppercase tracking-widest">Total Payable</p>
+                <p className="text-2xl font-heading italic">Rs. {totalAmount}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[8px] font-bold text-white/40 uppercase tracking-widest">Status</p>
+                <p className="text-xs font-bold uppercase tracking-widest">Ready to Order</p>
+              </div>
+            </div>
+
+            {/* Payment Selection */}
+            <div className="space-y-4 pt-4">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-deep uppercase tracking-[0.2em]">
+                <Shield className="h-3 w-3" />
+                <span>Secure Payment</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Button 
+                  variant="outline" 
+                  className="h-24 flex-col gap-3 rounded-2xl border-emerald-deep/10 hover:border-emerald-deep/30 hover:bg-emerald-deep/5 transition-all group"
+                  onClick={() => {
+                    setIsConfirmationOpen(false);
+                    processPayment('esewa');
+                  }}
+                >
                   <div className="h-10 w-16 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
                     <img src="https://picsum.photos/seed/esewa/40/40" alt="eSewa" className="h-6 rounded" />
                   </div>
                   <span className="text-[10px] font-bold uppercase tracking-widest">eSewa</span>
                 </Button>
-                <Button variant="outline" className="h-24 flex-col gap-3 rounded-2xl border-maroon/10 hover:border-maroon/30 hover:bg-maroon/5 transition-all group" onClick={() => processPayment('khalti')}>
+                <Button 
+                  variant="outline" 
+                  className="h-24 flex-col gap-3 rounded-2xl border-emerald-deep/10 hover:border-emerald-deep/30 hover:bg-emerald-deep/5 transition-all group"
+                  onClick={() => {
+                    setIsConfirmationOpen(false);
+                    processPayment('khalti');
+                  }}
+                >
                   <div className="h-10 w-16 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
                     <img src="https://picsum.photos/seed/khalti/40/40" alt="Khalti" className="h-6 rounded" />
                   </div>
                   <span className="text-[10px] font-bold uppercase tracking-widest">Khalti</span>
                 </Button>
-                <Button variant="outline" className="h-24 flex-col gap-3 rounded-2xl border-maroon/10 hover:border-maroon/30 hover:bg-maroon/5 transition-all group col-span-2" onClick={() => processPayment('cod')}>
-                  <div className="h-10 w-16 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
-                    <Truck className="h-6 w-6 text-maroon" />
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest">Cash on Delivery (COD)</span>
+                <Button 
+                  variant="outline" 
+                  className="col-span-2 h-16 rounded-2xl border-emerald-deep/10 hover:border-emerald-deep/30 hover:bg-emerald-deep/5 transition-all flex items-center justify-center gap-3"
+                  onClick={() => {
+                    setIsConfirmationOpen(false);
+                    processPayment('cod');
+                  }}
+                >
+                  <Truck className="h-4 w-4 text-emerald-deep" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Cash on Delivery</span>
                 </Button>
               </div>
             </div>
+          </div>
+          
+          <div className="p-6 bg-gray-50 flex gap-4">
+            <Button 
+              variant="ghost" 
+              className="flex-1 rounded-xl font-bold uppercase tracking-widest text-[10px] text-gray-400 hover:text-emerald-deep"
+              onClick={() => {
+                setIsConfirmationOpen(false);
+                setIsOrderModalOpen(true);
+              }}
+            >
+              Back to Details
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

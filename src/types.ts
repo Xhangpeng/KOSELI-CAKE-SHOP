@@ -55,3 +55,13 @@ export interface UserProfile {
   photoURL: string;
   role: 'admin' | 'user';
 }
+
+export interface AppNotification {
+  id: string;
+  userId: string;
+  message: string;
+  type: 'targeted' | 'broadcast';
+  read: boolean;
+  createdAt: any;
+  senderId?: string;
+}
