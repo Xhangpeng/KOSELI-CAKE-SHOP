@@ -100,15 +100,15 @@ const PaymentTest = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Card className="max-w-md w-full p-8 space-y-6 shadow-lg rounded-3xl border-maroon/10">
+      <Card className="max-w-md w-full p-8 space-y-6 shadow-lg rounded-3xl border-emerald-deep/10">
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold text-maroon">Payment Gateway Test</h1>
+          <h1 className="text-2xl font-bold text-emerald-deep">Payment Gateway Test</h1>
           <p className="text-muted-foreground italic">Testing Sandbox Integration</p>
         </div>
 
-        <div className="bg-maroon/5 p-6 rounded-2xl text-center">
+        <div className="bg-emerald-deep/5 p-6 rounded-2xl text-center">
           <p className="text-sm text-muted-foreground uppercase tracking-widest font-bold">Test Amount</p>
-          <p className="text-4xl font-bold text-maroon">Rs. {amount}</p>
+          <p className="text-4xl font-bold text-emerald-deep">Rs. {amount}</p>
         </div>
 
         <div className="grid gap-4">
@@ -131,7 +131,7 @@ const PaymentTest = () => {
           </Button>
         </div>
 
-        <div className="pt-4 border-t border-dashed border-maroon/10 text-center">
+        <div className="pt-4 border-t border-dashed border-emerald-deep/10 text-center">
           <p className="text-xs text-muted-foreground">
             Check the browser console (F12) to see initiation logs.
             After payment, you will be redirected to the verification page.
