@@ -2425,19 +2425,23 @@ export default function App() {
         createdAt: serverTimestamp()
       };
 
-      const orderRef = await addDoc(collection(db, 'orders'), orderData);
+      const orderRef = await addDoc(collection(db, 'orders'), orderData).catch(err => {
+        handleFirestoreError(err, OperationType.CREATE, 'orders');
+        throw err;
+      });
+      
       const orderId = orderRef.id;
       const fullOrder = { id: orderId, ...orderData } as Order;
 
-      // Notify Admin
-      await addDoc(collection(db, 'notifications'), {
+      // Notify Admin - Non-blocking
+      addDoc(collection(db, 'notifications'), {
         userId: 'admin',
         message: `New Order Received! Order #${orderId.slice(-6).toUpperCase()} from ${deliveryDetails.fullName}. Amount: Rs. ${totalAmount}`,
         type: 'targeted',
         read: false,
         createdAt: serverTimestamp(),
         senderId: user.uid
-      });
+      }).catch(err => console.error("Admin notification failed:", err));
 
       setCart([]);
       setIsOrderModalOpen(false);
@@ -2453,7 +2457,7 @@ export default function App() {
 
     } catch (error) {
       console.error(error);
-      toast.error('Failed to process order.');
+      toast.error('Order creation failed. Please check your delivery details.');
     }
   };
 
@@ -2626,6 +2630,17 @@ export default function App() {
         />
         
         <Routes>
+          <Route path="/product/:id" element={
+            <ProductDetailsPage 
+              products={products} 
+              onAddToCart={handlePageAddToCart} 
+              wishlist={wishlist}
+              onToggleWishlist={toggleWishlist}
+            />
+          } />
+          <Route path="/payment-test" element={<PaymentTest />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/payment-failure" element={<PaymentFailure />} />
           <Route path="*" element={
             <main className={`${activeView === 'admin' ? 'w-full' : 'container mx-auto px-4'} py-8 flex-1 flex flex-col min-h-[90vh]`}>
                 <AnimatePresence mode="wait">
@@ -3261,17 +3276,6 @@ export default function App() {
               </AnimatePresence>
             </main>
           } />
-          <Route path="/product/:id" element={
-            <ProductDetailsPage 
-              products={products} 
-              onAddToCart={handlePageAddToCart} 
-              wishlist={wishlist}
-              onToggleWishlist={toggleWishlist}
-            />
-          } />
-          <Route path="/payment-test" element={<PaymentTest />} />
-          <Route path="/payment-success" element={<PaymentSuccess />} />
-          <Route path="/payment-failure" element={<PaymentFailure />} />
         </Routes>
         <footer className="bg-emerald-deep text-white pt-16 pb-20 relative overflow-hidden border-t border-white/10">
           {/* Decorative Background Elements */}

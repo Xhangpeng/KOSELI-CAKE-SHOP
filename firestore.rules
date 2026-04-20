@@ -86,11 +86,14 @@ service cloud.firestore {
              data.totalAmount is number && data.totalAmount > 0 &&
              data.status in ['pending', 'confirmed', 'picked', 'ready', 'delivered', 'cancelled'] &&
              data.paymentStatus in ['unpaid', 'paid'] &&
-             (!('paymentMethod' in data) || data.paymentMethod in ['esewa', 'khalti', 'cod']) &&
+             (!('paymentMethod' in data) || data.paymentMethod in ['esewa', 'khalti', 'cod', 'cash']) &&
              data.deliveryDetails is map &&
              data.deliveryDetails.fullName is string && data.deliveryDetails.fullName.size() >= 1 &&
              data.deliveryDetails.phone is string && data.deliveryDetails.phone.size() >= 7 &&
-             data.deliveryDetails.address is string && data.deliveryDetails.address.size() >= 5;
+             (
+               (data.deliveryDetails.deliveryMethod == 'pickup') || 
+               (data.deliveryDetails.address is string && data.deliveryDetails.address.size() >= 5)
+             );
     }
 
     function isValidUser(data) {
@@ -143,7 +146,7 @@ service cloud.firestore {
 
     match /notifications/{notificationId} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || resource.data.userId == 'all' || isAdmin());
-      allow create: if isAdmin() && isValidNotification(request.resource.data);
+      allow create: if (isAdmin() || (isAuthenticated() && request.resource.data.userId == 'admin')) && isValidNotification(request.resource.data);
       allow update: if isAuthenticated() && (
         (resource.data.userId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])) ||
         isAdmin()
