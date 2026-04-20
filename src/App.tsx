@@ -232,10 +232,11 @@ const Navbar = ({ user, cartCount, onOpenCart, onOpenAuth, onSignOut, isAdmin, o
 const VisualNav = ({ activeTab, onTabChange }: { activeTab: string, onTabChange: (tab: string) => void }) => {
   const items = [
     { id: 'all', name: 'All Items', icon: Grid },
-    { id: 'cakes', name: 'Cakes', icon: CakeIcon },
-    { id: 'cupcakes', name: 'Cupcakes', icon: CakeIcon },
-    { id: 'pastries', name: 'Pastries', icon: Coffee },
-    { id: 'accessories', name: 'Extras', icon: Gift },
+    { id: 'Birthday', name: 'Birthday Cakes', icon: CakeIcon },
+    { id: 'Wedding', name: 'Wedding Cakes', icon: Heart },
+    { id: 'Cupcakes', name: 'Luxury Cupcakes', icon: CakeIcon },
+    { id: 'Pastries', name: 'Artisan Pastries', icon: Coffee },
+    { id: 'Accessories', name: 'Celebration Extras', icon: Gift },
   ];
 
   return (
@@ -530,7 +531,7 @@ const BottomNav = ({ cartCount, onOpenCart, onOpenAuth, user, onOpenOrders, onOp
   return (
     <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-[400px] h-20 bg-emerald-deep/80 backdrop-blur-2xl border border-white/20 flex items-center justify-around px-4 rounded-full shadow-[0_20px_50px_rgba(0,174,239,0.3)]">
       <NavItem icon={HomeIcon} view="home" onClick={() => { setView('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
-      <NavItem icon={Grid} view="menu" onClick={() => { setView('home'); setTimeout(() => document.getElementById('cakes')?.scrollIntoView({ behavior: 'smooth' }), 100); }} />
+      <NavItem icon={Grid} view="menu" onClick={() => { setView('menu'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
       <NavItem icon={ShoppingBag} view="cart" badge={cartCount} onClick={onOpenCart} />
       <NavItem icon={User} view="profile" onClick={() => user ? setView('profile') : onOpenAuth()} />
     </div>
@@ -2714,6 +2715,69 @@ export default function App() {
           <Route path="/" element={
             <main className={`${activeView === 'admin' ? 'w-full' : 'container mx-auto px-4'} py-8 flex-1 flex flex-col`}>
               <AnimatePresence mode="wait">
+                {activeView === 'menu' && (
+                  <motion.div
+                    key="menu"
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    transition={{ duration: 0.3 }}
+                    className="w-full pt-4 md:pt-12"
+                  >
+                    <div className="text-center mb-16 space-y-6">
+                      <div className="flex items-center justify-center gap-4">
+                        <div className="h-px w-8 bg-emerald-deep/20" />
+                        <span className="text-[10px] font-bold text-emerald-deep uppercase tracking-[0.6em]">Explore Our Menu</span>
+                        <div className="h-px w-8 bg-emerald-deep/20" />
+                      </div>
+                      <h2 className="text-5xl md:text-8xl font-heading font-medium text-emerald-deep tracking-tighter italic">
+                        The Full <span className="text-emerald-deep/40">Collection</span>
+                      </h2>
+                    </div>
+
+                    <VisualNav activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab)} />
+                    
+                    <div className="mt-16 md:mt-24 space-y-24">
+                      {/* Products Grid */}
+                      <section className="px-4 md:px-0">
+                        <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-16 gap-10">
+                          <div className="space-y-4">
+                            <h3 className="text-2xl md:text-4xl font-heading font-bold text-emerald-deep uppercase tracking-widest">{activeTab === 'all' ? 'Signature Collection' : `${activeTab} Selections`}</h3>
+                            <p className="text-xs text-emerald-deep/50 font-medium">Fine-tuned recipes for every celebration.</p>
+                          </div>
+                          <div className="relative w-full md:w-[400px]">
+                            <Search className="absolute left-6 top-1/2 h-5 w-5 -translate-y-1/2 text-emerald-deep/20" />
+                            <Input 
+                              placeholder="Search favorites..." 
+                              className="pl-16 w-full bg-white border-2 border-emerald-deep/5 h-16 rounded-2xl focus:ring-emerald-deep/5 text-lg font-medium text-emerald-deep transition-all" 
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid gap-4 md:gap-6 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                          {filteredProducts.map((product, idx) => (
+                            <motion.div
+                              key={product.id}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: idx * 0.05, duration: 0.4 }}
+                            >
+                              <ProductCard 
+                                product={product} 
+                                onAddToCart={addToCart} 
+                                isWishlisted={wishlist.includes(product.id)}
+                                onToggleWishlist={toggleWishlist}
+                              />
+                            </motion.div>
+                          ))}
+                        </div>
+                      </section>
+                    </div>
+                  </motion.div>
+                )}
+
                 {activeView === 'home' && (
                   <motion.div
                     key="home"
@@ -2795,7 +2859,7 @@ export default function App() {
                       </motion.div>
                     </section>
 
-                    <VisualNav activeTab={activeTab} onTabChange={(tab) => { setActiveTab(tab); setActiveView('home'); }} />
+                    <VisualNav activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab)} />
                     
                     {/* Product Section */}
                     <section id="cakes" className="py-24 md:py-48 px-4 md:px-8">
@@ -2948,7 +3012,7 @@ export default function App() {
                     updateCartQuantity={updateCartQuantity}
                     totalAmount={totalAmount}
                     onCheckout={handleCheckout}
-                    onExplore={() => setActiveView('home')}
+                    onExplore={() => setActiveView('menu')}
                     addToCart={addToCart}
                     clearCart={() => {
                       setCart([]);
@@ -3324,7 +3388,7 @@ export default function App() {
                   <h4 className="text-[9px] font-bold text-white uppercase tracking-[0.4em] mb-6">Quick Links</h4>
                   <nav className="flex flex-wrap gap-x-8 gap-y-3">
                     <button onClick={() => { setActiveView('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-sm font-medium text-white hover:text-white transition-colors">Home</button>
-                    <button onClick={() => document.getElementById('cakes')?.scrollIntoView({ behavior: 'smooth' })} className="text-sm font-medium text-white hover:text-white transition-colors">Shop</button>
+                    <button onClick={() => { setActiveView('menu'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-sm font-medium text-white hover:text-white transition-colors">Shop</button>
                     <button onClick={() => setActiveView('home')} className="text-sm font-medium text-white hover:text-white transition-colors">Story</button>
                   </nav>
                 </div>
@@ -3461,7 +3525,7 @@ export default function App() {
             <DialogTitle>Customize Your Cake</DialogTitle>
             <DialogDescription>Add a special touch to your {selectedProduct?.name}.</DialogDescription>
           </DialogHeader>
-          <ScrollArea className="flex-1">
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
             <div className="grid gap-4 py-4 pr-4">
               <div className="grid gap-2">
                 <Label htmlFor="name">Name on Cake</Label>
@@ -3504,7 +3568,7 @@ export default function App() {
                 </div>
               </div>
             </div>
-          </ScrollArea>
+          </div>
           <DialogFooter className="pt-4">
             <Button variant="outline" onClick={() => setIsDetailsModalOpen(false)}>Cancel</Button>
             <Button className="bg-emerald-deep hover:bg-emerald-deep/90" onClick={confirmAddToCart}>Add to Cart</Button>
@@ -3522,7 +3586,7 @@ export default function App() {
               <DialogDescription className="text-white/60 text-[10px] font-bold uppercase tracking-widest mt-2">Finalize your masterpiece collection.</DialogDescription>
             </DialogHeader>
           </div>
-          <ScrollArea className="flex-1 p-6 md:p-8">
+          <div className="flex-1 p-6 md:p-8 overflow-y-auto custom-scrollbar">
             <div className="space-y-10 pb-10">
               {/* Delivery Info */}
               <div className="space-y-6">
@@ -3715,7 +3779,7 @@ export default function App() {
                 Review Order Details
               </Button>
             </div>
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -3930,8 +3994,8 @@ export default function App() {
             <DialogTitle className="text-2xl font-heading text-emerald-deep">My Orders</DialogTitle>
             <DialogDescription>Track your current and past cake orders.</DialogDescription>
           </DialogHeader>
-          <ScrollArea className="flex-1 mt-4">
-            <div className="grid gap-6 pr-4 pb-6">
+          <div className="flex-1 mt-4 overflow-y-auto custom-scrollbar pr-2">
+            <div className="grid gap-6 pr-2 pb-6">
               {orders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
                   <div className="bg-emerald-deep/5 p-6 rounded-full">
@@ -4016,7 +4080,7 @@ export default function App() {
                 ))
               )}
             </div>
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
 
