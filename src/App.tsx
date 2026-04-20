@@ -234,6 +234,7 @@ const VisualNav = ({ activeTab, onTabChange }: { activeTab: string, onTabChange:
     { id: 'all', name: 'All Items', icon: Grid },
     { id: 'Birthday', name: 'Birthday Cakes', icon: CakeIcon },
     { id: 'Wedding', name: 'Wedding Cakes', icon: Heart },
+    { id: 'Custom', name: 'Custom Cakes', icon: Edit3 },
     { id: 'Cupcakes', name: 'Luxury Cupcakes', icon: CakeIcon },
     { id: 'Pastries', name: 'Artisan Pastries', icon: Coffee },
     { id: 'Accessories', name: 'Celebration Extras', icon: Gift },
@@ -508,6 +509,7 @@ const BottomNav = ({ cartCount, onOpenCart, onOpenAuth, user, onOpenOrders, onOp
   setView: (view: string) => void,
   isAdmin: boolean
 }) => {
+  const navigate = useNavigate();
   const NavItem = ({ icon: Icon, view, onClick, badge }: any) => {
     const isActive = activeView === view;
     return (
@@ -530,10 +532,10 @@ const BottomNav = ({ cartCount, onOpenCart, onOpenAuth, user, onOpenOrders, onOp
 
   return (
     <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-[400px] h-20 bg-emerald-deep/80 backdrop-blur-2xl border border-white/20 flex items-center justify-around px-4 rounded-full shadow-[0_20px_50px_rgba(0,174,239,0.3)]">
-      <NavItem icon={HomeIcon} view="home" onClick={() => { setView('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
-      <NavItem icon={Grid} view="menu" onClick={() => { setView('menu'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
-      <NavItem icon={ShoppingBag} view="cart" badge={cartCount} onClick={onOpenCart} />
-      <NavItem icon={User} view="profile" onClick={() => user ? setView('profile') : onOpenAuth()} />
+      <NavItem icon={HomeIcon} view="home" onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
+      <NavItem icon={Grid} view="menu" onClick={() => { navigate('/shop'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
+      <NavItem icon={ShoppingBag} view="cart" badge={cartCount} onClick={() => { navigate('/cart'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
+      <NavItem icon={User} view="profile" onClick={() => user ? navigate('/profile') : onOpenAuth()} />
     </div>
   );
 };
@@ -1965,10 +1967,14 @@ export default function App() {
 
   // Navigation sync
   useEffect(() => {
-    if (location.pathname !== '/' && activeView !== 'home') {
-      navigate('/');
-    }
-  }, [activeView, location.pathname, navigate]);
+    const path = location.pathname;
+    if (path === '/') setActiveView('home');
+    else if (path === '/shop') setActiveView('menu');
+    else if (path === '/cart') setActiveView('cart');
+    else if (path === '/profile') setActiveView('profile');
+    else if (path === '/orders') setActiveView('orders');
+    else if (path === '/admin') setActiveView('admin');
+  }, [location.pathname]);
   const [searchQuery, setSearchQuery] = useState('');
   const [orders, setOrders] = useState<Order[]>([]);
   const [allOrders, setAllOrders] = useState<Order[]>([]);
@@ -1989,6 +1995,9 @@ export default function App() {
   const [paymentMethod, setPaymentMethod] = useState<'esewa' | 'khalti' | 'cod'>('cod');
   const [isProductFormOpen, setIsProductFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isSimulatingPayment, setIsSimulatingPayment] = useState(false);
+  const [paymentStep, setPaymentStep] = useState<'details' | 'success'>('details');
+  const [simulatedOrder, setSimulatedOrder] = useState<Order | null>(null);
   const [productFormData, setProductFormData] = useState<Omit<Product, 'id'>>({
     name: '',
     description: '',
@@ -2398,21 +2407,19 @@ export default function App() {
     setFormErrors({});
 
     try {
-      const transaction_uuid = `${Date.now()}-${user.uid.slice(0, 5)}`;
-      
       const orderData: Omit<Order, 'id'> = {
         userId: user.uid,
         items: cart,
         deliveryDetails,
         totalAmount,
         status: 'pending',
-        paymentStatus: method === 'cod' ? 'unpaid' : 'unpaid', // Will be updated on success for others
+        paymentStatus: method === 'cod' ? 'unpaid' : 'paid',
         paymentMethod: method,
         timeline: [
           { 
             status: 'pending', 
             timestamp: new Date().toISOString(), 
-            message: method === 'cod' ? 'Order placed with Cash on Delivery.' : 'Order placed, awaiting payment.' 
+            message: method === 'cod' ? 'Order placed with Cash on Delivery.' : `Payment successful via ${method.toUpperCase()} (Simulated).` 
           }
         ],
         createdAt: serverTimestamp()
@@ -2420,6 +2427,7 @@ export default function App() {
 
       const orderRef = await addDoc(collection(db, 'orders'), orderData);
       const orderId = orderRef.id;
+      const fullOrder = { id: orderId, ...orderData } as Order;
 
       // Notify Admin
       await addDoc(collection(db, 'notifications'), {
@@ -2431,115 +2439,21 @@ export default function App() {
         senderId: user.uid
       });
 
-      if (method === 'cod') {
-        setCart([]);
-        setIsOrderModalOpen(false);
-        setActiveView('orders');
-        toast.success('Order placed successfully! Please pay on delivery.');
-        return;
-      }
-
-      // Sandbox Simulation for eSewa/Khalti
-      toast.info(`Redirecting to ${method.toUpperCase()} Sandbox...`, {
-        description: "Please do not close this window.",
-        duration: 3000
-      });
-
-      setTimeout(async () => {
-        try {
-          const orderRef = doc(db, 'orders', orderId);
-          await updateDoc(orderRef, {
-            paymentStatus: 'paid',
-            timeline: arrayUnion({
-              status: 'pending',
-              timestamp: new Date().toISOString(),
-              message: `Payment successful via ${method.toUpperCase()} Sandbox.`
-            })
-          });
-          
-          setCart([]);
-          setIsOrderModalOpen(false);
-          setActiveView('orders');
-          toast.success('Payment Successful!', {
-            description: 'Your artisan masterpiece is now being prepared.'
-          });
-        } catch (error) {
-          console.error(error);
-          toast.error('Payment simulation failed.');
-        }
-      }, 4000);
-
-      if (method === 'esewa') {
-        const product_code = import.meta.env.VITE_ESEWA_PRODUCT_CODE || 'EPAYTEST';
-        const gatewayUrl = import.meta.env.VITE_ESEWA_GATEWAY_URL || 'https://rc-epay.esewa.com.np/api/epay/main/v2/form';
-        
-        // Get signature from backend
-        const sigResponse = await fetch('/api/payment/esewa/initiate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount: totalAmount,
-            transaction_uuid: orderId, // Using orderId as transaction_uuid for tracking
-            product_code
-          })
-        });
-        
-        const { signature } = await sigResponse.json();
-
-        // Create and submit form
-        const form = document.createElement('form');
-        form.setAttribute('method', 'POST');
-        form.setAttribute('action', gatewayUrl);
-
-        const fields = {
-          amount: totalAmount.toString(),
-          tax_amount: '0',
-          total_amount: totalAmount.toString(),
-          transaction_uuid: orderId,
-          product_code: product_code,
-          product_service_charge: '0',
-          product_delivery_charge: '0',
-          success_url: `${window.location.origin}/payment-success?orderId=${orderId}`,
-          failure_url: `${window.location.origin}/payment-failure?orderId=${orderId}`,
-          signed_field_names: 'total_amount,transaction_uuid,product_code',
-          signature: signature
-        };
-
-        for (const [key, value] of Object.entries(fields)) {
-          const input = document.createElement('input');
-          input.setAttribute('type', 'hidden');
-          input.setAttribute('name', key);
-          input.setAttribute('value', value);
-          form.appendChild(input);
-        }
-
-        document.body.appendChild(form);
-        form.submit();
-      } else if (method === 'khalti') {
-        const response = await fetch('/api/payment/khalti/initiate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount: totalAmount,
-            purchase_order_id: orderId,
-            purchase_order_name: `Order #${orderId.slice(-6)}`,
-            return_url: `${window.location.origin}/payment-success?orderId=${orderId}`
-          })
-        });
-
-        const data = await response.json();
-        if (data.payment_url) {
-          window.location.href = data.payment_url;
-        } else {
-          toast.error('Failed to initiate Khalti payment');
-        }
-      }
-
       setCart([]);
       setIsOrderModalOpen(false);
-      setIsCartOpen(false);
+      setIsConfirmationOpen(false);
+      setSimulatedOrder(fullOrder);
+      setPaymentMethod(method);
+      setPaymentStep(method === 'cod' ? 'success' : 'details');
+      setIsSimulatingPayment(true);
+
+      if (method === 'cod') {
+        toast.success('Order placed successfully! Please pay on delivery.');
+      }
+
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, 'orders');
+      console.error(error);
+      toast.error('Failed to process order.');
     }
   };
 
@@ -2712,10 +2626,10 @@ export default function App() {
         />
         
         <Routes>
-          <Route path="/" element={
-            <main className={`${activeView === 'admin' ? 'w-full' : 'container mx-auto px-4'} py-8 flex-1 flex flex-col`}>
-              <AnimatePresence mode="wait">
-                {activeView === 'menu' && (
+          <Route path="*" element={
+            <main className={`${activeView === 'admin' ? 'w-full' : 'container mx-auto px-4'} py-8 flex-1 flex flex-col min-h-[90vh]`}>
+                <AnimatePresence mode="wait">
+                  {activeView === 'menu' && (
                   <motion.div
                     key="menu"
                     initial={{ opacity: 0, scale: 0.98 }}
@@ -3520,13 +3434,15 @@ export default function App() {
 
       {/* Custom Details Dialog */}
       <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
-        <DialogContent className="sm:max-w-[425px] max-h-[90vh] flex flex-col overflow-hidden rounded-3xl">
-          <DialogHeader>
-            <DialogTitle>Customize Your Cake</DialogTitle>
-            <DialogDescription>Add a special touch to your {selectedProduct?.name}.</DialogDescription>
-          </DialogHeader>
-          <div className="flex-1 overflow-y-auto custom-scrollbar">
-            <div className="grid gap-4 py-4 pr-4">
+        <DialogContent className="sm:max-w-[425px] max-h-[85vh] flex flex-col overflow-hidden rounded-3xl p-0">
+          <div className="bg-emerald-deep p-6 text-white shrink-0">
+            <DialogHeader>
+              <DialogTitle className="text-white">Customize Your Cake</DialogTitle>
+              <DialogDescription className="text-white/60">Add a special touch to your {selectedProduct?.name}.</DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-6 min-h-0 relative">
+            <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="name">Name on Cake</Label>
                 <Input 
@@ -3578,7 +3494,7 @@ export default function App() {
 
       {/* Checkout Dialog */}
       <Dialog open={isOrderModalOpen} onOpenChange={setIsOrderModalOpen}>
-        <DialogContent className="sm:max-w-[600px] w-[95vw] max-h-[95vh] flex flex-col overflow-hidden rounded-[2.5rem] p-0 border-none shadow-2xl">
+        <DialogContent className="sm:max-w-[600px] w-[95vw] max-h-[85vh] flex flex-col overflow-hidden rounded-[2.5rem] p-0 border-none shadow-2xl">
           <div className="bg-emerald-deep p-8 text-white relative overflow-hidden shrink-0">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
             <DialogHeader className="relative z-10">
@@ -3586,7 +3502,7 @@ export default function App() {
               <DialogDescription className="text-white/60 text-[10px] font-bold uppercase tracking-widest mt-2">Finalize your masterpiece collection.</DialogDescription>
             </DialogHeader>
           </div>
-          <div className="flex-1 p-6 md:p-8 overflow-y-auto custom-scrollbar">
+          <div className="flex-1 p-6 md:p-8 overflow-y-auto custom-scrollbar min-h-0 relative">
             <div className="space-y-10 pb-10">
               {/* Delivery Info */}
               <div className="space-y-6">
@@ -3989,12 +3905,15 @@ export default function App() {
 
       {/* My Orders Dialog */}
       <Dialog open={isOrdersOpen} onOpenChange={setIsOrdersOpen}>
-        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-hidden flex flex-col rounded-3xl">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-heading text-emerald-deep">My Orders</DialogTitle>
-            <DialogDescription>Track your current and past cake orders.</DialogDescription>
-          </DialogHeader>
-          <div className="flex-1 mt-4 overflow-y-auto custom-scrollbar pr-2">
+        <DialogContent className="sm:max-w-[800px] max-h-[85vh] overflow-hidden flex flex-col rounded-3xl p-0">
+          <div className="bg-emerald-deep p-8 text-white relative overflow-hidden shrink-0">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <DialogHeader className="relative z-10">
+              <DialogTitle className="text-2xl font-heading italic">My Orders</DialogTitle>
+              <DialogDescription className="text-white/60 text-[10px] font-bold uppercase tracking-widest mt-2">Track your current and past cake orders.</DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="flex-1 p-6 md:p-8 overflow-y-auto custom-scrollbar min-h-0 relative">
             <div className="grid gap-6 pr-2 pb-6">
               {orders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
@@ -4047,6 +3966,17 @@ export default function App() {
                         </div>
                         
                         <div className="flex flex-col gap-5 bg-emerald-deep/[0.02] p-5 rounded-2xl border border-emerald-deep/5">
+                          <div>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Estimated Delivery</p>
+                            <p className="text-sm font-bold text-emerald-deep">
+                              {(() => {
+                                const createdAt = order.createdAt?.seconds ? new Date(order.createdAt.seconds * 1000) : new Date();
+                                const estimated = new Date(createdAt.getTime() + 24 * 60 * 60 * 1000);
+                                return estimated.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+                              })()}
+                            </p>
+                          </div>
+                          <Separator className="bg-emerald-deep/10" />
                           <div>
                             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Total Amount</p>
                             <p className="text-2xl font-bold text-emerald-deep">Rs. {order.totalAmount}</p>
@@ -4179,7 +4109,96 @@ export default function App() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      {/* Back to Top Button */}
+      {/* Payment Simulation Dialog */}
+      <Dialog open={isSimulatingPayment} onOpenChange={setIsSimulatingPayment}>
+        <DialogContent className="sm:max-w-[450px] rounded-[2.5rem] border-none p-0 overflow-hidden shadow-2xl">
+          {paymentStep === 'details' ? (
+            <div className="bg-white">
+              <div className={`p-8 ${paymentMethod === 'esewa' ? 'bg-[#60bb46]' : 'bg-[#5c2d91]'} text-white`}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-2xl font-bold tracking-tight">{paymentMethod?.toUpperCase()} Payment</h3>
+                  <div className="bg-white/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Simulated</div>
+                </div>
+                <p className="text-white/80 text-sm font-medium">Safe & Secure Digital Transaction</p>
+              </div>
+              <div className="p-8 space-y-6">
+                <div className="space-y-4">
+                  <div className="grid gap-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Merchant</Label>
+                    <p className="text-sm font-bold text-emerald-deep italic">Koseli Artisan Bakery</p>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Total Amount</Label>
+                    <p className="text-2xl font-heading font-bold text-emerald-deep">Rs. {totalAmount}</p>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Payment ID / Phone</Label>
+                    <Input placeholder="Enter your registered number" defaultValue={deliveryDetails.phone} className="rounded-xl border-emerald-deep/10" />
+                  </div>
+                </div>
+                <div className="bg-emerald-deep/5 p-4 rounded-xl text-[10px] font-bold text-emerald-deep uppercase tracking-widest leading-relaxed text-center">
+                  This is a simulated payment gateway for demonstration purposes.
+                </div>
+                <Button 
+                  className={`w-full h-16 rounded-2xl text-[11px] font-bold uppercase tracking-[0.2em] shadow-lg transition-all ${paymentMethod === 'esewa' ? 'bg-[#60bb46] hover:bg-[#52a13b]' : 'bg-[#5c2d91] hover:bg-[#4d2678]'}`}
+                  onClick={() => {
+                    setCart([]);
+                    setPaymentStep('success');
+                  }}
+                >
+                  Pay Now
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white p-12 text-center space-y-8">
+              <div className="relative mx-auto w-24 h-24">
+                <motion.div 
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute inset-0 bg-emerald-deep rounded-full flex items-center justify-center text-white"
+                >
+                  <CheckCircle2 className="h-12 w-12" />
+                </motion.div>
+                <div className="absolute inset-0 bg-emerald-deep rounded-full animate-ping opacity-20" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-3xl font-heading font-bold text-emerald-deep italic">Masterpiece Secured!</h3>
+                <p className="text-sm text-gray-500 font-medium tracking-tight">
+                  {paymentMethod === 'cod' ? 'Order placed successfully. Pay on delivery.' : 'Transaction completed with the precision of art.'}
+                </p>
+              </div>
+
+              {simulatedOrder && (
+                <div className="bg-[#e5e5e0]/30 p-6 rounded-[2rem] border border-emerald-deep/5 space-y-4 text-left">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">Order ID</span>
+                    <span className="text-xs font-bold text-emerald-deep">#{simulatedOrder.id.slice(-8).toUpperCase()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">Amount</span>
+                    <span className="text-sm font-bold text-emerald-deep">Rs. {simulatedOrder.totalAmount}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">Date</span>
+                    <span className="text-xs font-bold text-emerald-deep">{new Date().toLocaleDateString()}</span>
+                  </div>
+                </div>
+              )}
+
+              <Button 
+                className="w-full h-16 rounded-2xl bg-emerald-deep text-white font-bold text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-emerald-deep/20 hover:scale-105 active:scale-95 transition-all"
+                onClick={() => {
+                  setIsSimulatingPayment(false);
+                  navigate('/orders');
+                }}
+              >
+                View Order History
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       <AnimatePresence>
         {showBackToTop && (
           <motion.button
