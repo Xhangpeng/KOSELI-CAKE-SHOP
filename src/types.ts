@@ -37,6 +37,7 @@ export type OrderStatus = 'pending' | 'confirmed' | 'picked' | 'ready' | 'delive
 
 export interface Order {
   id: string;
+  readableId: string;
   userId: string;
   items: OrderItem[];
   deliveryDetails: DeliveryDetails;

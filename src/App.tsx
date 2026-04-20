@@ -72,7 +72,10 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ArrowUp,
-  Play
+  Play,
+  Box,
+  ChefHat,
+  Camera
 } from 'lucide-react';
 import { 
   auth, 
@@ -101,6 +104,7 @@ import {
   OrderItem, 
   DeliveryDetails, 
   OrderStatus, 
+  TimelineEvent,
   UserProfile,
   AppNotification
 } from './types';
@@ -119,7 +123,7 @@ import { Toaster, toast } from 'sonner';
 
 // --- Components ---
 
-const Navbar = ({ user, cartCount, onOpenCart, onOpenAuth, onSignOut, isAdmin, onOpenAdmin, onOpenOrders, onOpenProfile, setView, onOpenNotifications, unreadNotifications }: { 
+const Navbar = ({ user, cartCount, onOpenCart, onOpenAuth, onSignOut, isAdmin, onOpenAdmin, onOpenOrders, onOpenProfile, setView }: { 
   user: any, 
   cartCount: number, 
   onOpenCart: () => void, 
@@ -129,9 +133,7 @@ const Navbar = ({ user, cartCount, onOpenCart, onOpenAuth, onSignOut, isAdmin, o
   onOpenAdmin: () => void,
   onOpenOrders: () => void,
   onOpenProfile: () => void,
-  setView: (view: any) => void,
-  onOpenNotifications: () => void,
-  unreadNotifications: number
+  setView: (view: any) => void
 }) => (
   <nav className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-2xl border-b border-emerald-deep/5">
     <div className="container mx-auto px-4 md:px-8 h-20 md:h-24 flex items-center justify-between">
@@ -1008,32 +1010,33 @@ const NotificationInbox = ({
   );
 };
 
-const CartNotification = ({ product, isOpen }: { product: Product | null, isOpen: boolean }) => {
+const CartNotification = ({ product, isOpen, onClick }: { product: Product | null, isOpen: boolean, onClick: () => void }) => {
   if (!product) return null;
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div
+        <motion.button
           initial={{ opacity: 0, y: 50, scale: 0.9 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.9 }}
-          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-md"
+          onClick={onClick}
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-md focus:outline-none group"
         >
-          <div className="bg-emerald-deep/95 backdrop-blur-xl border border-white/10 rounded-full p-2 pl-6 shadow-2xl flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center">
-                <ShoppingBag className="h-5 w-5 text-emerald-deep" />
+          <div className="bg-emerald-deep/95 backdrop-blur-xl border border-white/20 rounded-[3rem] p-3 shadow-[0_40px_80px_rgba(0,174,239,0.4)] flex items-center justify-between transition-all group-hover:scale-[1.02] active:scale-[0.98]">
+            <div className="flex items-center gap-5 pl-5">
+              <div className="h-14 w-14 rounded-[1.5rem] bg-white/10 flex items-center justify-center border border-white/10 group-hover:bg-white group-hover:text-emerald-deep transition-all duration-500">
+                <ShoppingBag className="h-7 w-7 transition-colors" />
               </div>
-              <div className="flex flex-col">
-                <span className="text-white font-heading font-bold text-sm leading-tight">{product.name}</span>
-                <span className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Added to your collection</span>
+              <div className="flex flex-col text-left">
+                <span className="text-white font-heading font-bold text-xl leading-tight italic">{product.name}</span>
+                <span className="text-white/50 text-[10px] font-bold uppercase tracking-[0.3em] mt-1">Added to collection • Tap to view</span>
               </div>
             </div>
-            <div className="h-10 w-10 rounded-full bg-emerald-deep flex items-center justify-center mr-1">
-              <CheckCircle2 className="h-5 w-5 text-emerald-deep" />
+            <div className="h-14 w-14 rounded-[1.5rem] bg-white/10 flex items-center justify-center mr-1 group-hover:bg-white group-hover:text-emerald-deep transition-all duration-500">
+              <ArrowRight className="h-7 w-7 transition-colors" />
             </div>
           </div>
-        </motion.div>
+        </motion.button>
       )}
     </AnimatePresence>
   );
@@ -1055,35 +1058,38 @@ const AddToCartModal = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
-        className="sm:max-w-[500px] w-[95vw] rounded-[3.5rem] border-emerald-deep/5 shadow-[0_50px_100px_rgba(0,0,0,0.2)] p-0 overflow-hidden cursor-pointer group"
+        className="sm:max-w-[500px] w-[95vw] rounded-[4rem] border-none shadow-[0_50px_100px_rgba(0,0,0,0.2)] p-0 overflow-hidden cursor-pointer group"
         onClick={(e) => {
           if ((e.target as HTMLElement).closest('button')) return;
           onGoToCart();
         }}
       >
-        <div className="bg-white p-10 md:p-12 text-emerald-deep text-center space-y-4 relative overflow-hidden border-b border-emerald-deep/5">
+        <div className="bg-emerald-deep p-12 md:p-16 text-white text-center space-y-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
           <motion.div 
             initial={{ scale: 0, rotate: -20 }}
             animate={{ scale: 1, rotate: 0 }}
-            className="h-20 w-20 md:h-24 md:w-24 bg-emerald-deep/5 backdrop-blur-md rounded-full flex items-center justify-center mx-auto mb-6 border border-emerald-deep/10 shadow-2xl"
+            className="h-24 w-24 md:h-32 md:w-32 bg-white/10 backdrop-blur-md rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 border border-white/20 shadow-2xl"
           >
-            <CheckCircle2 className="h-10 w-10 md:h-12 md:w-12 text-emerald-deep" strokeWidth={1.5} />
+            <CheckCircle2 className="h-12 w-12 md:h-16 md:w-16 text-white" strokeWidth={1.5} />
           </motion.div>
-          <h2 className="text-2xl md:text-4xl font-heading font-bold italic tracking-tight">Added to Collection</h2>
-          <p className="text-emerald-deep/40 text-[10px] md:text-[11px] font-bold uppercase tracking-[0.4em]">An exquisite choice, artisan</p>
+          <div className="space-y-4">
+            <h2 className="text-3xl md:text-5xl font-heading font-bold italic tracking-tight uppercase">Exquisite Choice</h2>
+            <p className="text-white/50 text-[10px] md:text-xs font-bold uppercase tracking-[0.5em]">This masterpiece was added to cart</p>
+          </div>
         </div>
         
-        <div className="p-10 md:p-12 space-y-10">
-          <div className="flex items-center gap-6 md:gap-8 bg-emerald-deep/[0.02] p-6 rounded-[2.5rem] border border-emerald-deep/5 shadow-inner">
-            <div className="h-24 w-24 md:h-32 md:w-32 rounded-[2rem] overflow-hidden shrink-0 border border-emerald-deep/10 shadow-xl">
+        <div className="p-10 md:p-12 space-y-12 bg-white">
+          <div className="flex items-center gap-8 bg-emerald-deep/[0.03] p-8 rounded-[3.5rem] border border-emerald-deep/5 shadow-inner">
+            <div className="h-28 w-28 md:h-40 md:w-40 rounded-[2.5rem] overflow-hidden shrink-0 border border-emerald-deep/10 shadow-2xl">
               <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-110" referrerPolicy="no-referrer" />
             </div>
-            <div className="flex-1 space-y-2">
-              <h4 className="font-heading font-bold text-emerald-deep text-xl md:text-2xl leading-tight italic">{product.name}</h4>
-              <p className="text-[10px] md:text-[11px] text-emerald-deep/30 font-bold uppercase tracking-[0.3em]">{product.category}</p>
-              <div className="flex items-baseline gap-1 mt-4">
-                <span className="text-[10px] md:text-[11px] font-bold text-emerald-deep/20">Rs.</span>
-                <span className="font-heading font-bold text-2xl md:text-3xl text-emerald-deep/60 tracking-tighter">{product.price}</span>
+            <div className="flex-1 space-y-3">
+              <h4 className="font-heading font-bold text-emerald-deep text-2xl md:text-3xl leading-tight italic">{product.name}</h4>
+              <p className="text-[10px] md:text-xs text-emerald-deep/40 font-bold uppercase tracking-[0.3em]">{product.category}</p>
+              <div className="pt-4 flex items-baseline gap-2">
+                <span className="text-sm font-bold text-emerald-deep/20 uppercase tracking-widest leading-none">Value</span>
+                <span className="font-heading font-bold text-3xl md:text-4xl text-emerald-deep tracking-tighter leading-none italic">Rs. {product.price}</span>
               </div>
             </div>
           </div>
@@ -1282,6 +1288,247 @@ const QuickSidebar = ({
   </motion.div>
 );
 
+const ArtisanSelect = ({ 
+  value, 
+  options, 
+  onSelect,
+  className = "",
+  renderIcon
+}: { 
+  value: string, 
+  options: { label: string, value: string, icon?: any, color?: string }[], 
+  onSelect: (v: string) => void,
+  className?: string,
+  renderIcon?: (v: string) => any
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const activeOption = options.find(o => o.value === value) || options[0];
+
+  return (
+    <div className={`relative ${className}`}>
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full group bg-emerald-deep/5 border border-emerald-deep/5 hover:border-emerald-deep/10 rounded-2xl px-6 py-4 flex items-center justify-between gap-4 transition-all duration-300 min-w-[160px]"
+      >
+        <div className="flex items-center gap-3">
+          {activeOption.icon && <activeOption.icon className="h-3.5 w-3.5 text-emerald-deep/40" />}
+          <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-deep">
+            {activeOption.label}
+          </span>
+        </div>
+        <ChevronRight className={`h-4 w-4 text-emerald-deep/20 transition-transform duration-500 ${isOpen ? 'rotate-90' : ''}`} />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              className="absolute top-full left-0 right-0 mt-2 z-50 bg-white border border-emerald-deep/10 rounded-3xl shadow-2xl shadow-emerald-deep/10 overflow-hidden p-2"
+            >
+              <div className="space-y-1">
+                {options.map((opt, i) => {
+                  const Icon = opt.icon;
+                  const isCurrent = opt.value === value;
+
+                  return (
+                    <motion.button
+                      key={opt.value}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      onClick={() => { onSelect(opt.value); setIsOpen(false); }}
+                      className={`w-full flex items-center justify-between p-3 rounded-2xl transition-all group relative ${
+                        isCurrent ? 'bg-emerald-deep text-white shadow-lg' : 
+                        'hover:bg-emerald-deep/5 text-emerald-deep/60 hover:text-emerald-deep'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {Icon && <Icon className={`h-4 w-4 ${isCurrent ? 'text-white' : 'text-current'}`} />}
+                        <span className="text-[10px] font-bold uppercase tracking-widest leading-none">
+                          {opt.label}
+                        </span>
+                      </div>
+                      {isCurrent && <CheckCircle2 className="h-3 w-3 text-white" />}
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const StatusPicker = ({ 
+  currentStatus, 
+  timeline, 
+  onUpdate 
+}: { 
+  currentStatus: OrderStatus, 
+  timeline: TimelineEvent[], 
+  onUpdate: (s: OrderStatus) => void 
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  
+  const statusOrder: OrderStatus[] = ['pending', 'confirmed', 'picked', 'ready', 'delivered'];
+  const currentIndex = statusOrder.indexOf(currentStatus);
+  
+  const lastEvent = timeline[timeline.length - 1];
+  const previousStatus = timeline.length > 1 ? timeline[timeline.length - 2]?.status : null;
+  const canReverse = useMemo(() => {
+    if (!lastEvent || !previousStatus) return false;
+    const updateTime = new Date(lastEvent.timestamp).getTime();
+    const now = new Date().getTime();
+    const diff = (now - updateTime) / 1000 / 60;
+    return diff < 5;
+  }, [lastEvent, previousStatus, currentStatus]);
+
+  useEffect(() => {
+    if (!canReverse || !lastEvent) {
+      setTimeLeft(null);
+      return;
+    }
+    
+    const interval = setInterval(() => {
+      const updateTime = new Date(lastEvent.timestamp).getTime();
+      const now = new Date().getTime();
+      const diffMs = 5 * 60 * 1000 - (now - updateTime);
+      if (diffMs <= 0) {
+        setTimeLeft(null);
+        clearInterval(interval);
+      } else {
+        setTimeLeft(Math.floor(diffMs / 1000));
+      }
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [canReverse, lastEvent]);
+
+  const getStatusIcon = (s: OrderStatus) => {
+    switch(s) {
+      case 'pending': return Clock;
+      case 'confirmed': return CheckCircle2;
+      case 'picked': return Package;
+      case 'ready': return Cake;
+      case 'delivered': return Truck;
+      case 'cancelled': return AlertTriangle;
+      default: return Clock;
+    }
+  };
+
+  const isStatusDisabled = (s: OrderStatus) => {
+    if (s === 'cancelled') return false; 
+    if (s === currentStatus) return false;
+    
+    const targetIndex = statusOrder.indexOf(s);
+    if (targetIndex > currentIndex) return false; 
+    
+    if (s === previousStatus && timeLeft !== null) return false;
+    
+    return true;
+  };
+
+  const options = ['pending', 'confirmed', 'picked', 'ready', 'delivered', 'cancelled'].map(s => ({
+    label: s.charAt(0).toUpperCase() + s.slice(1),
+    value: s,
+    icon: getStatusIcon(s as OrderStatus),
+    isDisabled: isStatusDisabled(s as OrderStatus),
+    isUndo: s === previousStatus && timeLeft !== null
+  }));
+
+  return (
+    <div className="relative">
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className={`group border rounded-2xl px-6 py-4 flex items-center justify-between gap-4 transition-all duration-300 min-w-[200px] ${
+          currentStatus === 'cancelled' 
+            ? 'bg-red-50 border-red-200 text-red-600 shadow-lg shadow-red-500/10' 
+            : 'bg-emerald-deep/5 border-emerald-deep/5 hover:border-emerald-deep/10 text-emerald-deep'
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <div className={`h-2 w-2 rounded-full animate-pulse ${currentStatus === 'cancelled' ? 'bg-red-500' : 'bg-emerald-deep'}`} />
+          <span className="text-[10px] font-bold uppercase tracking-widest">
+            {currentStatus}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          {timeLeft !== null && (
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-deep/10 rounded-full animate-in fade-in zoom-in duration-300">
+               <History className="h-2.5 w-2.5 text-emerald-deep/60" />
+               <span className="text-[8px] font-bold text-emerald-deep tabular-nums">
+                 {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+               </span>
+            </div>
+          )}
+          <ChevronRight className={`h-4 w-4 text-emerald-deep/20 transition-transform duration-500 ${isOpen ? 'rotate-90' : ''}`} />
+        </div>
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              className="absolute top-full left-0 right-0 mt-2 z-50 bg-white border border-emerald-deep/10 rounded-3xl shadow-2xl shadow-emerald-deep/10 overflow-hidden p-2"
+            >
+              <div className="space-y-1">
+                {options.map((opt, i) => {
+                  const isCancelled = opt.value === 'cancelled';
+                  
+                  return (
+                    <React.Fragment key={opt.value}>
+                      {isCancelled && <div className="h-px bg-emerald-deep/5 my-2 mx-2" />}
+                      <motion.button
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        disabled={opt.isDisabled}
+                        onClick={() => { onUpdate(opt.value as OrderStatus); setIsOpen(false); }}
+                        className={`w-full flex items-center justify-between p-3 rounded-2xl transition-all group relative ${
+                          opt.isDisabled ? 'opacity-20 grayscale cursor-not-allowed' : 
+                          opt.value === currentStatus ? (isCancelled ? 'bg-red-500 text-white shadow-lg' : 'bg-emerald-deep text-white shadow-lg') : 
+                          isCancelled ? 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700' :
+                          opt.isUndo ? 'bg-amber-50 text-amber-700' :
+                          'hover:bg-emerald-deep/5 text-emerald-deep/60 hover:text-emerald-deep'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <opt.icon className={`h-4 w-4 ${opt.value === currentStatus ? 'text-white' : 'text-current'} ${isCancelled && opt.value !== currentStatus ? 'animate-pulse' : ''}`} />
+                          <span className="text-[10px] font-bold uppercase tracking-widest leading-none">
+                            {opt.label}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {opt.isUndo && (
+                              <span className="text-[8px] font-bold uppercase tracking-widest text-amber-600/60 ring-1 ring-amber-600/20 px-1.5 py-0.5 rounded-full">Undo</span>
+                            )}
+                            {opt.value === currentStatus && <CheckCircle2 className="h-3 w-3 text-white" />}
+                            {isCancelled && opt.value !== currentStatus && <AlertCircle className="h-3 w-3 text-red-400" />}
+                          </div>
+                      </motion.button>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 const AdminDashboard = ({ 
   products, 
   orders, 
@@ -1292,7 +1539,6 @@ const AdminDashboard = ({
   onToggleStock,
   onUpdateOrderStatus,
   onUpdatePaymentStatus,
-  onSendNotification,
   onBack
 }: { 
   products: Product[], 
@@ -1304,13 +1550,11 @@ const AdminDashboard = ({
   onToggleStock: (id: string, inStock: boolean) => void,
   onUpdateOrderStatus: (orderId: string, status: OrderStatus) => void,
   onUpdatePaymentStatus: (orderId: string, status: 'paid' | 'unpaid') => void,
-  onSendNotification: (userId: string, message: string, type: 'targeted' | 'broadcast') => void,
   onBack: () => void
 }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [orderFilter, setOrderFilter] = useState<OrderStatus | 'all'>('all');
-  const [notifTarget, setNotifTarget] = useState<string>('all');
-  const [notifMessage, setNotifMessage] = useState('');
+  const [trackId, setTrackId] = useState('');
 
   const filteredOrders = orderFilter === 'all' ? orders : orders.filter(o => o.status === orderFilter);
   
@@ -1367,8 +1611,7 @@ const AdminDashboard = ({
           <SidebarItem id="products" label="Products" icon={Grid} />
           <SidebarItem id="orders" label="Orders" icon={ShoppingBag} />
           <SidebarItem id="users" label="Customers" icon={Users} />
-          <SidebarItem id="notifications" label="Marketing" icon={Bell} />
-          <SidebarItem id="settings" label="Settings" icon={Settings} />
+          <SidebarItem id="settings" label="Control Panel" icon={Shield} />
         </nav>
 
         <div className="mt-auto pt-8 border-t border-emerald-deep/5">
@@ -1407,7 +1650,7 @@ const AdminDashboard = ({
                 <SidebarItem id="products" label="Products" icon={Grid} />
                 <SidebarItem id="orders" label="Orders" icon={ShoppingBag} />
                 <SidebarItem id="users" label="Customers" icon={Users} />
-                <SidebarItem id="notifications" label="Marketing" icon={Bell} />
+                <SidebarItem id="settings" label="Control Panel" icon={Shield} />
               </nav>
               <div className="mt-auto pt-8 border-t border-emerald-deep/5">
                 <Button 
@@ -1426,7 +1669,9 @@ const AdminDashboard = ({
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-16">
           <div className="flex items-center gap-6">
             <div>
-              <h1 className="text-4xl md:text-6xl font-heading font-bold text-emerald-deep tracking-tighter italic capitalize">{activeTab}</h1>
+              <h1 className="text-4xl md:text-6xl font-heading font-bold text-emerald-deep tracking-tighter italic capitalize">
+                {activeTab === 'settings' ? 'Control Panel' : activeTab}
+              </h1>
               <div className="flex items-center gap-3 mt-2">
                 <div className="h-2 w-2 rounded-full bg-emerald-deep animate-pulse" />
                 <p className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-[0.4em]">Live System Status: Operational</p>
@@ -1436,12 +1681,6 @@ const AdminDashboard = ({
           <div className="flex items-center gap-4">
             <Button variant="outline" className="h-14 w-14 rounded-full border-emerald-deep/10 text-emerald-deep">
               <Download className="h-5 w-5" />
-            </Button>
-            <Button 
-              className="bg-emerald-deep text-white hover:bg-emerald-deep/90 rounded-full px-8 h-14 font-bold text-[10px] uppercase tracking-widest shadow-xl shadow-emerald-deep/20 transition-all flex items-center gap-3"
-              onClick={onAddProduct}
-            >
-              <Plus className="h-4 w-4" /> New Masterpiece
             </Button>
           </div>
         </header>
@@ -1718,7 +1957,7 @@ const AdminDashboard = ({
                   <div className="flex flex-col md:flex-row justify-between gap-8 border-b border-emerald-deep/5 pb-10">
                     <div className="space-y-2">
                       <div className="flex items-center gap-4">
-                        <h4 className="font-heading font-bold text-3xl text-emerald-deep italic">Order #{order.id.slice(-6).toUpperCase()}</h4>
+                        <h4 className="font-heading font-bold text-3xl text-emerald-deep italic">Order #{order.readableId || order.id.slice(-6).toUpperCase()}</h4>
                         <Badge className={`px-4 py-1.5 rounded-full font-bold text-[9px] uppercase tracking-widest border-none ${
                           order.status === 'delivered' ? 'bg-emerald-deep text-white' :
                           order.status === 'cancelled' ? 'bg-emerald-deep/40 text-white' :
@@ -1732,30 +1971,24 @@ const AdminDashboard = ({
                     <div className="flex flex-wrap items-center gap-4">
                       <div className="flex flex-col gap-2">
                         <span className="text-[9px] font-bold text-emerald-deep/30 uppercase tracking-widest ml-4">Order Status</span>
-                        <select 
-                          className="bg-emerald-deep/5 border-none rounded-2xl px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-emerald-deep focus:ring-2 focus:ring-emerald-deep outline-none cursor-pointer min-w-[180px]"
-                          value={order.status}
-                          onChange={(e) => onUpdateOrderStatus(order.id, e.target.value as OrderStatus)}
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="confirmed">Confirmed</option>
-                          <option value="picked">Picked</option>
-                          <option value="ready">Ready</option>
-                          <option value="delivered">Delivered</option>
-                          <option value="cancelled">Cancelled</option>
-                        </select>
+                        <StatusPicker 
+                          currentStatus={order.status} 
+                          timeline={order.timeline} 
+                          onUpdate={(s) => onUpdateOrderStatus(order.id, s)}
+                        />
                       </div>
 
                       <div className="flex flex-col gap-2">
                         <span className="text-[9px] font-bold text-emerald-deep/30 uppercase tracking-widest ml-4">Payment</span>
-                        <select 
-                          className="bg-emerald-deep/5 border-none rounded-2xl px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-emerald-deep focus:ring-2 focus:ring-emerald-deep outline-none cursor-pointer min-w-[140px]"
+                        <ArtisanSelect 
                           value={order.paymentStatus}
-                          onChange={(e) => onUpdatePaymentStatus(order.id, e.target.value as 'paid' | 'unpaid')}
-                        >
-                          <option value="unpaid">Unpaid</option>
-                          <option value="paid">Paid</option>
-                        </select>
+                          options={[
+                            { label: 'Unpaid', value: 'unpaid', icon: Clock },
+                            { label: 'Paid', value: 'paid', icon: CheckCircle2 }
+                          ]}
+                          onSelect={(v) => onUpdatePaymentStatus(order.id, v as 'paid' | 'unpaid')}
+                          className="min-w-[140px]"
+                        />
                       </div>
                     </div>
                   </div>
@@ -1861,7 +2094,7 @@ const AdminDashboard = ({
                         </Badge>
                       </td>
                       <td className="px-10 py-8">
-                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-emerald-deep/5" onClick={() => { setNotifTarget(u.uid); setActiveTab('notifications'); }}>
+                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full cursor-not-allowed opacity-20">
                           <Bell className="h-4 w-4 text-emerald-deep/40" />
                         </Button>
                       </td>
@@ -1873,52 +2106,88 @@ const AdminDashboard = ({
           </div>
         )}
 
-        {activeTab === 'notifications' && (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="bg-white p-12 rounded-[3.5rem] border border-emerald-deep/5 shadow-sm max-w-3xl mx-auto">
-              <div className="flex items-center gap-4 mb-10">
-                <div className="h-14 w-14 rounded-2xl bg-emerald-deep/10 flex items-center justify-center text-emerald-deep">
-                  <Bell className="h-7 w-7" />
+
+        {activeTab === 'settings' && (
+          <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="grid md:grid-cols-2 gap-8">
+              {/* Quick Actions */}
+              <div className="bg-white p-10 rounded-[3rem] border border-emerald-deep/5 shadow-sm space-y-8">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-2xl bg-emerald-deep/5 flex items-center justify-center text-emerald-deep font-bold">
+                    <Zap className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-heading font-bold text-emerald-deep italic">Quick Actions</h3>
                 </div>
-                <div>
-                  <h3 className="font-heading font-bold text-3xl text-emerald-deep italic">Marketing & Alerts</h3>
-                  <p className="text-[10px] font-bold text-emerald-deep/30 uppercase tracking-widest">Engage with your community.</p>
+                <div className="grid gap-4">
+                  <Button 
+                    variant="outline" 
+                    className="h-20 justify-start px-8 rounded-2xl border-emerald-deep/10 hover:bg-emerald-deep hover:text-white transition-all group"
+                    onClick={onAddProduct}
+                  >
+                    <Plus className="h-5 w-5 mr-4 text-emerald-deep group-hover:text-white" />
+                    <span className="font-bold text-[10px] uppercase tracking-widest">Add New Masterpiece</span>
+                  </Button>
                 </div>
               </div>
-              <div className="space-y-8">
-                <div className="space-y-3">
-                  <label className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-[0.3em] ml-4">Recipient</label>
-                  <select 
-                    className="w-full bg-emerald-deep/5 border-none rounded-[2rem] px-8 py-5 text-sm font-bold text-emerald-deep focus:ring-2 focus:ring-emerald-deep outline-none cursor-pointer"
-                    value={notifTarget}
-                    onChange={(e) => setNotifTarget(e.target.value)}
-                  >
-                    <option value="all">Broadcast to All Artisans</option>
-                    {users.map(u => (
-                      <option key={u.uid} value={u.uid}>{u.displayName} ({u.email})</option>
-                    ))}
-                  </select>
+
+              {/* Order Tracking */}
+              <div className="bg-white p-10 rounded-[3rem] border border-emerald-deep/5 shadow-sm space-y-8">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-2xl bg-emerald-deep/5 flex items-center justify-center text-emerald-deep font-bold">
+                    <Search className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-heading font-bold text-emerald-deep italic">Track Order</h3>
                 </div>
-                <div className="space-y-3">
-                  <label className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-[0.3em] ml-4">Your Message</label>
-                  <textarea 
-                    className="w-full bg-emerald-deep/5 border-none rounded-[2rem] px-8 py-6 text-sm font-bold text-emerald-deep focus:ring-2 focus:ring-emerald-deep outline-none min-h-[180px] placeholder:text-emerald-deep/20"
-                    placeholder="E.g., 'New seasonal collection just dropped! Check your dashboard...'"
-                    value={notifMessage}
-                    onChange={(e) => setNotifMessage(e.target.value)}
-                  />
+                <div className="space-y-4">
+                  <p className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest leading-relaxed">
+                    Quickly find an order by its unique ID (e.g., ORD-1234 or Firestore ID).
+                  </p>
+                  <div className="flex gap-2">
+                    <Input 
+                      placeholder="ORD-XXXX..." 
+                      className="h-14 rounded-xl border-emerald-deep/10"
+                      value={trackId}
+                      onChange={(e) => setTrackId(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const id = trackId.toUpperCase();
+                          const found = orders.find(o => (o.readableId && o.readableId === id) || o.id.includes(id) || o.id === id);
+                          if (found) {
+                            setOrderFilter('all');
+                            setActiveTab('orders');
+                          } else {
+                            toast.error('Order ID not found');
+                          }
+                        }
+                      }}
+                    />
+                    <Button 
+                      className="h-14 bg-emerald-deep rounded-xl px-6"
+                      onClick={() => {
+                        const id = trackId.toUpperCase();
+                        const found = orders.find(o => (o.readableId && o.readableId === id) || o.id.includes(id) || o.id === id);
+                        if (found) {
+                          setOrderFilter('all');
+                          setActiveTab('orders');
+                        } else {
+                          toast.error('Order ID not found');
+                        }
+                      }}
+                    >
+                      Find
+                    </Button>
+                  </div>
                 </div>
-                <Button 
-                  className="w-full bg-emerald-deep text-white hover:bg-emerald-deep/90 h-20 rounded-[2rem] font-bold text-[11px] uppercase tracking-[0.4em] transition-all shadow-2xl shadow-emerald-deep/20 flex items-center justify-center gap-4"
-                  onClick={() => {
-                    if (!notifMessage.trim()) return;
-                    onSendNotification(notifTarget, notifMessage, notifTarget === 'all' ? 'broadcast' : 'targeted');
-                    setNotifMessage('');
-                    toast.success('Notification dispatched successfully!');
-                  }}
-                >
-                  <Zap className="h-5 w-5" /> Dispatch Message
-                </Button>
+              </div>
+            </div>
+            
+            <div className="bg-emerald-deep/5 p-12 rounded-[4rem] text-center space-y-6">
+              <Shield className="h-12 w-12 text-emerald-deep mx-auto opacity-20" />
+              <div className="space-y-2">
+                <h4 className="font-heading font-bold text-2xl text-emerald-deep italic">System Integrity</h4>
+                <p className="text-xs text-emerald-deep/40 font-medium max-w-md mx-auto">
+                  Only administrators have access to this Control Panel. All actions are logged for audit purposes.
+                </p>
               </div>
             </div>
           </div>
@@ -1979,8 +2248,6 @@ export default function App() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [prevOrdersCount, setPrevOrdersCount] = useState<number | null>(null);
   const [prevCancelledCount, setPrevCancelledCount] = useState<number | null>(null);
   const [wishlist, setWishlist] = useState<string[]>([]);
@@ -1996,6 +2263,8 @@ export default function App() {
   const [isProductFormOpen, setIsProductFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isSimulatingPayment, setIsSimulatingPayment] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
   const [paymentStep, setPaymentStep] = useState<'details' | 'success'>('details');
   const [simulatedOrder, setSimulatedOrder] = useState<Order | null>(null);
   const [productFormData, setProductFormData] = useState<Omit<Product, 'id'>>({
@@ -2063,21 +2332,6 @@ export default function App() {
             console.error('Users subscription error:', error);
           });
         }
-
-        // Fetch notifications
-        const notificationTargets = [u.uid, 'all'];
-        if (isUserAdmin) notificationTargets.push('admin');
-        
-        const qNotif = query(
-          collection(db, 'notifications'), 
-          where('userId', 'in', notificationTargets),
-          orderBy('createdAt', 'desc')
-        );
-        onSnapshot(qNotif, (snapshot) => {
-          setNotifications(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any as AppNotification)));
-        }, (error) => {
-          console.error('Notifications subscription error:', error);
-        });
       } else {
         setIsAdmin(false);
         setOrders([]);
@@ -2148,9 +2402,23 @@ export default function App() {
       await signInWithPopup(auth, googleProvider);
       setIsAuthOpen(false);
       toast.success('Signed in successfully!');
-    } catch (error) {
-      console.error(error);
-      toast.error('Failed to sign in.');
+    } catch (error: any) {
+      console.error('Sign-in Error:', error);
+      
+      let message = 'Failed to sign in.';
+      if (error.code === 'auth/unauthorized-domain') {
+        message = `This domain (${window.location.hostname}) is not authorized in Firebase Console. Please add it to "Authorized Domains".`;
+      } else if (error.code === 'auth/popup-blocked') {
+        message = 'Login popup was blocked by your browser. Please allow popups for this site.';
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        message = 'Login window was closed before completing sign-in.';
+      } else if (error.message) {
+        message = `Sign-in Error: ${error.message}`;
+      }
+      
+      toast.error(message, {
+        duration: 6000
+      });
     }
   };
 
@@ -2189,30 +2457,6 @@ export default function App() {
     setPrevCancelledCount(currentCancelledCount);
   }, [allOrders, isAdmin]);
 
-  const sendNotification = async (targetUserId: string, message: string, type: 'targeted' | 'broadcast') => {
-    if (!isAdmin) return;
-    try {
-      await addDoc(collection(db, 'notifications'), {
-        userId: targetUserId,
-        message,
-        type,
-        read: false,
-        createdAt: serverTimestamp(),
-        senderId: user?.uid
-      });
-      toast.success('Notification sent successfully');
-    } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, 'notifications');
-    }
-  };
-
-  const markNotificationAsRead = async (id: string) => {
-    try {
-      await updateDoc(doc(db, 'notifications', id), { read: true });
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `notifications/${id}`);
-    }
-  };
 
   const handleSignOut = async () => {
     await signOut(auth);
@@ -2282,6 +2526,10 @@ export default function App() {
 
   const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
+  const generateReadableId = () => {
+    return `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+  };
+
   const handleCheckout = (method?: 'esewa' | 'khalti' | 'cod') => {
     if (!user) {
       setIsAuthOpen(true);
@@ -2322,6 +2570,12 @@ export default function App() {
   const handleSaveProduct = async () => {
     if (!isAdmin) return;
 
+    // Validation
+    if (!productFormData.name.trim() || !productFormData.imageUrl.trim() || productFormData.price <= 0) {
+      toast.error('Please provide name, price, and image for the masterpiece');
+      return;
+    }
+
     try {
       if (editingProduct) {
         await updateDoc(doc(db, 'products', editingProduct.id), productFormData);
@@ -2347,14 +2601,34 @@ export default function App() {
   };
 
   const handleDeleteProduct = async (id: string) => {
-    if (!isAdmin) return;
-    if (!confirm('Are you sure you want to delete this product?')) return;
+    if (!isAdmin) {
+      toast.error('Admin privileges required for deletion');
+      return;
+    }
+    
+    // Ensure we have a valid, trimmed ID
+    const productId = id?.trim();
+    if (!productId) {
+      toast.error('Invalid product ID');
+      return;
+    }
 
+    setProductToDelete(productId);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteProduct = async () => {
+    if (!productToDelete) return;
+    
     try {
-      await deleteDoc(doc(db, 'products', id));
-      toast.success('Product deleted successfully');
-    } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `products/${id}`);
+      const productRef = doc(db, 'products', productToDelete);
+      await deleteDoc(productRef);
+      toast.success('Masterpiece removed from collection');
+      setIsDeleteConfirmOpen(false);
+      setProductToDelete(null);
+    } catch (error: any) {
+      toast.error(`Delete failed: ${error.message || 'Unknown error'}`);
+      handleFirestoreError(error, OperationType.DELETE, `products/${productToDelete}`);
     }
   };
 
@@ -2406,58 +2680,107 @@ export default function App() {
     }
     setFormErrors({});
 
+    setPaymentMethod(method);
+
+    if (method === 'cod') {
+      // Direct order creation for COD
+      try {
+        const readableId = generateReadableId();
+        const orderData: Omit<Order, 'id'> = {
+          readableId,
+          userId: user.uid,
+          items: cart,
+          deliveryDetails,
+          totalAmount,
+          status: 'pending',
+          paymentStatus: 'unpaid',
+          paymentMethod: 'cod',
+          timeline: [
+            { 
+              status: 'pending', 
+              timestamp: new Date().toISOString(), 
+              message: 'Order placed with Cash on Delivery.' 
+            }
+          ],
+          createdAt: serverTimestamp()
+        };
+
+        const orderRef = await addDoc(collection(db, 'orders'), orderData);
+        const fullOrder = { id: orderRef.id, ...orderData } as Order;
+        
+        setCart([]);
+        setIsOrderModalOpen(false);
+        setIsConfirmationOpen(false);
+        setSimulatedOrder(fullOrder);
+        setPaymentStep('success');
+        setIsSimulatingPayment(true);
+        toast.success('Order placed successfully! Pay on delivery.');
+
+        // Notify Admin
+        addDoc(collection(db, 'notifications'), {
+          userId: 'admin',
+          message: `NEW COD: ${readableId} from ${deliveryDetails.fullName}.`,
+          type: 'targeted',
+          read: false,
+          createdAt: serverTimestamp(),
+          senderId: user.uid
+        });
+
+      } catch (error) {
+        toast.error('Order failed. Check details.');
+      }
+    } else {
+      // Show simulation screen FIRST for online payments
+      setIsOrderModalOpen(false);
+      setIsConfirmationOpen(false);
+      setPaymentStep('details');
+      setIsSimulatingPayment(true);
+    }
+  };
+
+  const finalizeOnlinePayment = async () => {
+    if (!user || !paymentMethod) return;
+
     try {
+      const readableId = generateReadableId();
       const orderData: Omit<Order, 'id'> = {
+        readableId,
         userId: user.uid,
         items: cart,
         deliveryDetails,
         totalAmount,
         status: 'pending',
-        paymentStatus: method === 'cod' ? 'unpaid' : 'paid',
-        paymentMethod: method,
+        paymentStatus: 'paid',
+        paymentMethod: paymentMethod as any,
         timeline: [
           { 
             status: 'pending', 
             timestamp: new Date().toISOString(), 
-            message: method === 'cod' ? 'Order placed with Cash on Delivery.' : `Payment successful via ${method.toUpperCase()} (Simulated).` 
+            message: `Payment successful via ${paymentMethod.toUpperCase()}.` 
           }
         ],
         createdAt: serverTimestamp()
       };
 
-      const orderRef = await addDoc(collection(db, 'orders'), orderData).catch(err => {
-        handleFirestoreError(err, OperationType.CREATE, 'orders');
-        throw err;
-      });
+      const orderRef = await addDoc(collection(db, 'orders'), orderData);
+      const fullOrder = { id: orderRef.id, ...orderData } as Order;
       
-      const orderId = orderRef.id;
-      const fullOrder = { id: orderId, ...orderData } as Order;
-
-      // Notify Admin - Non-blocking
+      setCart([]);
+      setSimulatedOrder(fullOrder);
+      setPaymentStep('success');
+      
+      // Notify Admin
       addDoc(collection(db, 'notifications'), {
         userId: 'admin',
-        message: `New Order Received! Order #${orderId.slice(-6).toUpperCase()} from ${deliveryDetails.fullName}. Amount: Rs. ${totalAmount}`,
+        message: `PAID ORDER: ${readableId} via ${paymentMethod.toUpperCase()}.`,
         type: 'targeted',
         read: false,
         createdAt: serverTimestamp(),
         senderId: user.uid
-      }).catch(err => console.error("Admin notification failed:", err));
-
-      setCart([]);
-      setIsOrderModalOpen(false);
-      setIsConfirmationOpen(false);
-      setSimulatedOrder(fullOrder);
-      setPaymentMethod(method);
-      setPaymentStep(method === 'cod' ? 'success' : 'details');
-      setIsSimulatingPayment(true);
-
-      if (method === 'cod') {
-        toast.success('Order placed successfully! Please pay on delivery.');
-      }
+      });
 
     } catch (error) {
-      console.error(error);
-      toast.error('Order creation failed. Please check your delivery details.');
+      toast.error('Payment finalized but order creation failed. Contact support.');
     }
   };
 
@@ -2573,23 +2896,16 @@ export default function App() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
           setView={setActiveView}
-          onOpenNotifications={() => setIsNotificationsOpen(!isNotificationsOpen)}
-          unreadNotifications={notifications.filter(n => !n.read).length}
         />
-
-        {isNotificationsOpen && (
-          <div className="fixed top-24 right-6 z-[60] animate-in fade-in slide-in-from-top-4 duration-300">
-            <NotificationInbox 
-              notifications={notifications}
-              onMarkAsRead={markNotificationAsRead}
-              onClose={() => setIsNotificationsOpen(false)}
-            />
-          </div>
-        )}
 
         <CartNotification 
           isOpen={showCartNotification}
           product={notificationProduct}
+          onClick={() => {
+            setShowCartNotification(false);
+            setActiveView('cart');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
         />
 
         <AnimatePresence>
@@ -3268,7 +3584,6 @@ export default function App() {
                       onToggleStock={toggleStock}
                       onUpdateOrderStatus={updateOrderStatus}
                       onUpdatePaymentStatus={updatePaymentStatus}
-                      onSendNotification={sendNotification}
                       onBack={() => setActiveView('home')}
                     />
                   </motion.div>
@@ -3378,109 +3693,125 @@ export default function App() {
       />
 
 
-      {/* Auth Dialog */}
       <Dialog open={isAuthOpen} onOpenChange={setIsAuthOpen}>
-        <DialogContent className="sm:max-w-[400px] max-h-[90vh] overflow-y-auto rounded-3xl">
-          <DialogHeader>
-            <DialogTitle className="text-center text-2xl">Welcome to Koseli</DialogTitle>
-            <DialogDescription className="text-center">
-              Sign in to place orders and track your deliveries.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Button variant="outline" className="flex items-center gap-2 py-6" onClick={handleSignIn}>
-              <svg className="h-5 w-5" viewBox="0 0 24 24">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+        <DialogContent className="sm:max-w-[450px] w-[95vw] rounded-[4rem] border-none shadow-2xl p-0 overflow-hidden">
+          <div className="bg-emerald-deep p-12 md:p-16 text-white text-center relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <DialogHeader className="relative z-10 space-y-4">
+              <div className="h-20 w-20 bg-white/10 backdrop-blur-md rounded-[1.5rem] flex items-center justify-center mx-auto mb-4 border border-white/20">
+                <Sparkles className="h-10 w-10 text-white" />
+              </div>
+              <DialogTitle className="text-3xl md:text-5xl font-heading font-bold italic uppercase tracking-tight">Artisan Portal</DialogTitle>
+              <DialogDescription className="text-white/50 text-[10px] font-bold uppercase tracking-[0.4em]">Join the finest bake collection</DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="p-10 md:p-12 space-y-8 bg-white">
+            <p className="text-sm text-center text-emerald-deep/60 font-medium leading-relaxed italic">
+              Sign in to manage your masterpieces, track orders, and experience the full artisan collection.
+            </p>
+            <Button 
+              className="w-full bg-emerald-deep hover:bg-emerald-deep/90 text-white h-20 rounded-[2rem] font-bold text-xs uppercase tracking-[0.3em] shadow-xl shadow-emerald-deep/20 flex items-center justify-center gap-4 transition-all hover:scale-[1.02]" 
+              onClick={handleSignIn}
+            >
+              <svg className="h-6 w-6" viewBox="0 0 24 24">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="currentColor" />
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="currentColor" />
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="currentColor" />
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="currentColor" />
               </svg>
               Continue with Google
             </Button>
+            <p className="text-[9px] text-center font-bold text-emerald-deep/30 uppercase tracking-widest pb-4">
+              Secure authentication via Google Cloud
+            </p>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Cancel Order Confirmation Dialog */}
       <Dialog open={isCancelModalOpen} onOpenChange={setIsCancelModalOpen}>
-        <DialogContent className="sm:max-w-[400px] p-0 overflow-hidden rounded-[3rem] border-red-100 shadow-2xl">
-          <div className="bg-red-50 p-10 md:p-12 text-center space-y-4 border-b border-red-100">
-            <div className="h-20 w-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl border border-red-100">
-              <AlertTriangle className="h-10 w-10 text-red-600" strokeWidth={1.5} />
+        <DialogContent className="sm:max-w-[450px] w-[95vw] p-0 overflow-hidden rounded-[4rem] border-none shadow-[0_50px_100px_rgba(239,68,68,0.15)] bg-white">
+          <div className="bg-red-600 p-12 md:p-16 text-center space-y-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="h-24 w-24 bg-white/10 backdrop-blur-md rounded-[1.5rem] flex items-center justify-center mx-auto mb-4 border border-white/20 shadow-2xl">
+              <AlertTriangle className="h-12 w-12 text-white" strokeWidth={1.5} />
             </div>
-            <h2 className="text-2xl md:text-3xl font-heading font-bold text-red-600 italic tracking-tight">Cancel Order?</h2>
-            <p className="text-red-900/40 text-[10px] uppercase tracking-[0.3em] font-bold">This masterpiece is currently pending</p>
+            <div className="space-y-4 relative z-10">
+              <h2 className="text-3xl md:text-5xl font-heading font-bold text-white italic tracking-tighter uppercase leading-none">Cancel Collection?</h2>
+              <p className="text-white/40 text-[10px] uppercase tracking-[0.4em] font-bold leading-none">This process is final</p>
+            </div>
           </div>
           
-          <div className="p-10 md:p-12 space-y-8 bg-white">
-            <p className="text-sm text-center text-gray-500 font-medium leading-relaxed">
-              Are you sure you want to cancel your order? This process is immediate and cannot be reversed.
+          <div className="p-10 md:p-12 space-y-12 bg-white">
+            <p className="text-sm text-center text-emerald-deep/60 font-medium leading-relaxed italic">
+              "We understand, artisan. Sometimes paths diverge. Are you certain you wish to archive this request?"
             </p>
             
             <div className="grid grid-cols-1 gap-4">
               <Button 
-                className="h-16 rounded-2xl bg-red-600 text-white font-bold text-[11px] uppercase tracking-[0.3em] hover:bg-red-700 shadow-xl shadow-red-600/10 transition-all"
+                className="h-20 rounded-[2rem] bg-red-600 text-white font-bold text-[10px] uppercase tracking-[0.3em] hover:bg-red-700 shadow-xl shadow-red-600/10 transition-all active:scale-95"
                 onClick={handleCancelOrder}
               >
-                Yes, Cancel Order
+                Yes, Archive Request
               </Button>
               <Button 
                 variant="ghost" 
-                className="h-16 rounded-2xl text-gray-400 font-bold text-[11px] uppercase tracking-[0.3em] hover:bg-gray-50 transition-all"
+                className="h-16 rounded-[1.5rem] text-emerald-deep/30 font-bold text-[10px] uppercase tracking-[0.3em] hover:bg-emerald-deep/[0.03] hover:text-emerald-deep transition-all"
                 onClick={() => setIsCancelModalOpen(false)}
               >
-                No, Keep It
+                No, Maintain Collection
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Custom Details Dialog */}
       <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
-        <DialogContent className="sm:max-w-[425px] max-h-[85vh] flex flex-col overflow-hidden rounded-3xl p-0">
-          <div className="bg-emerald-deep p-6 text-white shrink-0">
-            <DialogHeader>
-              <DialogTitle className="text-white">Customize Your Cake</DialogTitle>
-              <DialogDescription className="text-white/60">Add a special touch to your {selectedProduct?.name}.</DialogDescription>
+        <DialogContent className="sm:max-w-[450px] w-[95vw] rounded-[4rem] border-none shadow-2xl p-0 overflow-hidden">
+          <div className="bg-emerald-deep p-12 md:p-14 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <DialogHeader className="relative z-10 space-y-2">
+              <DialogTitle className="text-3xl md:text-4xl font-heading font-bold italic tracking-tight uppercase">Custom Artistry</DialogTitle>
+              <DialogDescription className="text-white/50 text-[10px] font-bold uppercase tracking-[0.4em]">Design your {selectedProduct?.name}</DialogDescription>
             </DialogHeader>
           </div>
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-6 min-h-0 relative">
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">Name on Cake</Label>
+          <div className="p-10 md:p-12 space-y-10 bg-white">
+            <div className="space-y-8">
+              <div className="space-y-3">
+                <Label htmlFor="name" className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-deep/40 ml-2">Personalization</Label>
                 <Input 
                   id="name" 
-                  placeholder="e.g. Happy Birthday John" 
+                  placeholder="The name to highlight..." 
+                  className="rounded-2xl border-emerald-deep/10 focus:ring-emerald-deep/5 h-16 text-lg font-medium shadow-inner"
                   value={customDetails.name}
                   onChange={(e) => setCustomDetails({...customDetails, name: e.target.value})}
                 />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="design">Design Instructions</Label>
+              <div className="space-y-3">
+                <Label htmlFor="design" className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-deep/40 ml-2">Artistic Direction</Label>
                 <Input 
                   id="design" 
-                  placeholder="e.g. Add extra flowers, blue theme" 
+                  placeholder="Special colors or additions..." 
+                  className="rounded-2xl border-emerald-deep/10 focus:ring-emerald-deep/5 h-16 text-lg font-medium shadow-inner"
                   value={customDetails.design}
                   onChange={(e) => setCustomDetails({...customDetails, design: e.target.value})}
                 />
               </div>
-              <div className="grid gap-2">
-                <Label>Quantity</Label>
-                <div className="flex items-center gap-4 bg-emerald-deep/5 w-fit p-1 rounded-xl">
+              <div className="space-y-3">
+                <Label className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-deep/40 ml-2">Masterpiece Quantity</Label>
+                <div className="flex items-center gap-6 bg-emerald-deep/[0.03] w-fit p-2 rounded-[1.5rem] border border-emerald-deep/5">
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-8 w-8 rounded-lg hover:bg-white text-emerald-deep"
+                    className="h-10 w-10 rounded-xl bg-white shadow-sm text-emerald-deep hover:bg-emerald-deep hover:text-white transition-all"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
-                  <span className="font-bold text-lg min-w-[20px] text-center text-emerald-deep">{quantity}</span>
+                  <span className="font-heading font-bold text-2xl min-w-[30px] text-center text-emerald-deep italic">{quantity}</span>
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-8 w-8 rounded-lg hover:bg-white text-emerald-deep"
+                    className="h-10 w-10 rounded-xl bg-white shadow-sm text-emerald-deep hover:bg-emerald-deep hover:text-white transition-all"
                     onClick={() => setQuantity(quantity + 1)}
                   >
                     <Plus className="h-4 w-4" />
@@ -3488,121 +3819,120 @@ export default function App() {
                 </div>
               </div>
             </div>
+            
+            <div className="flex gap-4 pt-6 border-t border-emerald-deep/5">
+              <Button 
+                variant="ghost" 
+                className="flex-1 h-16 rounded-[1.5rem] text-[10px] uppercase font-bold tracking-widest text-emerald-deep/40 hover:text-emerald-deep"
+                onClick={() => setIsDetailsModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                className="flex-[2] h-16 rounded-[1.5rem] bg-emerald-deep hover:bg-emerald-deep/90 text-white font-bold text-[10px] uppercase tracking-widest shadow-xl shadow-emerald-deep/20 transition-all active:scale-95"
+                onClick={confirmAddToCart}
+              >
+                Add To Collection
+              </Button>
+            </div>
           </div>
-          <DialogFooter className="pt-4">
-            <Button variant="outline" onClick={() => setIsDetailsModalOpen(false)}>Cancel</Button>
-            <Button className="bg-emerald-deep hover:bg-emerald-deep/90" onClick={confirmAddToCart}>Add to Cart</Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Checkout Dialog */}
       <Dialog open={isOrderModalOpen} onOpenChange={setIsOrderModalOpen}>
-        <DialogContent className="sm:max-w-[600px] w-[95vw] max-h-[85vh] flex flex-col overflow-hidden rounded-[2.5rem] p-0 border-none shadow-2xl">
-          <div className="bg-emerald-deep p-8 text-white relative overflow-hidden shrink-0">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <DialogHeader className="relative z-10">
-              <DialogTitle className="text-3xl font-heading font-bold italic">Artisan Checkout</DialogTitle>
-              <DialogDescription className="text-white/60 text-[10px] font-bold uppercase tracking-widest mt-2">Finalize your masterpiece collection.</DialogDescription>
+        <DialogContent className="sm:max-w-[650px] w-[95vw] max-h-[90vh] flex flex-col overflow-hidden rounded-[4rem] p-0 border-none shadow-2xl bg-white">
+          <div className="bg-emerald-deep p-12 md:p-16 text-white relative overflow-hidden shrink-0">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <DialogHeader className="relative z-10 space-y-4">
+              <div className="h-16 w-16 bg-white/10 backdrop-blur-md rounded-[1rem] flex items-center justify-center border border-white/20">
+                <LayoutDashboard className="h-8 w-8 text-white" />
+              </div>
+              <DialogTitle className="text-4xl md:text-6xl font-heading font-bold italic uppercase tracking-tighter">Artisan Checkout</DialogTitle>
+              <DialogDescription className="text-white/50 text-[10px] font-bold uppercase tracking-[0.4em]">Finalize your collection</DialogDescription>
             </DialogHeader>
           </div>
-          <div className="flex-1 p-6 md:p-8 overflow-y-auto custom-scrollbar min-h-0 relative">
-            <div className="space-y-10 pb-10">
+          <div className="flex-1 p-10 md:p-14 overflow-y-auto custom-scrollbar min-h-0 relative">
+            <div className="space-y-12 pb-10">
               {/* Delivery Info */}
-              <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <Truck className="h-4 w-4 text-emerald-deep" />
-                  <h4 className="text-[10px] font-bold text-emerald-deep uppercase tracking-[0.3em]">Delivery Logistics</h4>
+              <div className="space-y-8">
+                <div className="flex items-center gap-4">
+                  <div className="h-px w-8 bg-emerald-deep/20" />
+                  <h4 className="text-[10px] font-bold text-emerald-deep uppercase tracking-[0.4em] transform -translate-y-px">Logistics</h4>
                 </div>
                 
-                <div className="grid gap-6">
-                  <div className="grid gap-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-emerald-deep/40 ml-2">Method</Label>
-                    <div className="flex gap-2 p-1.5 bg-emerald-deep/5 rounded-2xl border border-emerald-deep/5">
+                <div className="grid gap-8">
+                  <div className="space-y-4">
+                    <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-deep/30 ml-4 italic">Fulfillment Method</Label>
+                    <div className="flex gap-3 p-2 bg-emerald-deep/[0.03] rounded-[2rem] border border-emerald-deep/5">
                       <Button 
                         variant="ghost"
-                        className={`flex-1 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all h-12 ${deliveryDetails.deliveryMethod === 'delivery' ? 'bg-white text-emerald-deep shadow-sm' : 'text-emerald-deep/40 hover:text-emerald-deep'}`}
+                        className={`flex-1 rounded-[1.5rem] font-bold uppercase tracking-widest text-[10px] transition-all h-14 ${deliveryDetails.deliveryMethod === 'delivery' ? 'bg-white text-emerald-deep shadow-xl' : 'text-emerald-deep/30 hover:text-emerald-deep/60'}`}
                         onClick={() => setDeliveryDetails({...deliveryDetails, deliveryMethod: 'delivery'})}
                       >
-                        Delivery
+                        White Glove Delivery
                       </Button>
                       <Button 
                         variant="ghost"
-                        className={`flex-1 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all h-12 ${deliveryDetails.deliveryMethod === 'pickup' ? 'bg-white text-emerald-deep shadow-sm' : 'text-emerald-deep/40 hover:text-emerald-deep'}`}
+                        className={`flex-1 rounded-[1.5rem] font-bold uppercase tracking-widest text-[10px] transition-all h-14 ${deliveryDetails.deliveryMethod === 'pickup' ? 'bg-white text-emerald-deep shadow-xl' : 'text-emerald-deep/30 hover:text-emerald-deep/60'}`}
                         onClick={() => setDeliveryDetails({...deliveryDetails, deliveryMethod: 'pickup'})}
                       >
-                        Pickup
+                        Boutique Pickup
                       </Button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="grid gap-2">
-                      <Label htmlFor="fullName" className="text-[10px] font-bold uppercase tracking-widest text-emerald-deep/40 ml-2">Full Name</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                      <Label htmlFor="fullName" className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-deep/30 ml-4 italic">Artisan Name</Label>
                       <Input 
                         id="fullName" 
                         value={deliveryDetails.fullName}
                         onChange={(e) => setDeliveryDetails({...deliveryDetails, fullName: e.target.value})}
-                        className="rounded-xl border-emerald-deep/10 focus:ring-emerald-deep h-12"
+                        className="rounded-2xl border-emerald-deep/10 focus:ring-emerald-deep/5 h-16 bg-emerald-deep/[0.01] shadow-inner"
                       />
                     </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="phone" className="text-[10px] font-bold uppercase tracking-widest text-emerald-deep/40 ml-2">Phone</Label>
+                    <div className="space-y-4">
+                      <Label htmlFor="phone" className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-deep/30 ml-4 italic">Contact Line</Label>
                       <Input 
                         id="phone" 
                         value={deliveryDetails.phone}
                         onChange={(e) => setDeliveryDetails({...deliveryDetails, phone: e.target.value})}
-                        className="rounded-xl border-emerald-deep/10 focus:ring-emerald-deep h-12"
+                        className="rounded-2xl border-emerald-deep/10 focus:ring-emerald-deep/5 h-16 bg-emerald-deep/[0.01] shadow-inner"
                       />
                     </div>
                   </div>
 
-                  <div className="grid gap-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-emerald-deep/40 ml-2">Address</Label>
+                  <div className="grid gap-4">
+                    <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-deep/30 ml-4 italic">Delivery Destination</Label>
                     {deliveryDetails.deliveryMethod === 'pickup' ? (
-                      <div className="p-6 bg-emerald-deep/[0.02] rounded-2xl border border-emerald-deep/5 text-xs text-emerald-deep leading-relaxed">
-                        <p className="font-bold text-emerald-deep mb-1">Koseli Artisan Bakery</p>
+                      <div className="p-8 bg-emerald-deep/[0.03] rounded-[2rem] border border-emerald-deep/5 text-sm text-emerald-deep leading-relaxed shadow-inner italic">
+                        <p className="font-bold text-emerald-deep mb-2">Koseli Artisan Bakery</p>
                         <p className="opacity-60">Airy Chauraha, Dhangadhi, Nepal</p>
+                        <p className="opacity-40 mt-4 text-[10px] font-bold uppercase tracking-widest">Hand-off from 9:00 AM - 8:00 PM</p>
                       </div>
                     ) : (
                       <Input 
                         id="address" 
-                        placeholder="Street, House No, Landmark"
+                        placeholder="Street, Studio No, Landmark..."
                         value={deliveryDetails.address}
                         onChange={(e) => setDeliveryDetails({...deliveryDetails, address: e.target.value})}
-                        className="rounded-xl border-emerald-deep/10 focus:ring-emerald-deep h-12"
+                        className="rounded-2xl border-emerald-deep/10 focus:ring-emerald-deep/5 h-20 bg-emerald-deep/[0.01] shadow-inner px-6"
                       />
                     )}
                   </div>
                 </div>
               </div>
-              <div className="grid gap-4">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-emerald-deep/60">Delivery Date</Label>
-                <div className="flex gap-2">
-                  <Button 
-                    variant={deliveryDetails.deliveryDate === new Date().toISOString().split('T')[0] ? "default" : "outline"}
-                    className={`flex-1 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all ${deliveryDetails.deliveryDate === new Date().toISOString().split('T')[0] ? 'bg-emerald-deep text-white shadow-lg' : 'border-emerald-deep/10 text-emerald-deep hover:bg-emerald-deep/5'}`}
-                    onClick={() => {
-                      const today = new Date().toISOString().split('T')[0];
-                      setDeliveryDetails({...deliveryDetails, deliveryDate: today});
-                    }}
-                  >
-                    Today
-                  </Button>
-                  <Button 
-                    variant={deliveryDetails.deliveryDate === new Date(Date.now() + 86400000).toISOString().split('T')[0] ? "default" : "outline"}
-                    className={`flex-1 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all ${deliveryDetails.deliveryDate === new Date(Date.now() + 86400000).toISOString().split('T')[0] ? 'bg-emerald-deep text-white shadow-lg' : 'border-emerald-deep/10 text-emerald-deep hover:bg-emerald-deep/5'}`}
-                    onClick={() => {
-                      const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-                      setDeliveryDetails({...deliveryDetails, deliveryDate: tomorrow});
-                    }}
-                  >
-                    Tomorrow
-                  </Button>
+
+              {/* Schedule */}
+              <div className="space-y-8">
+                <div className="flex items-center gap-4">
+                  <div className="h-px w-8 bg-emerald-deep/20" />
+                  <h4 className="text-[10px] font-bold text-emerald-deep uppercase tracking-[0.4em] transform -translate-y-px">Schedule</h4>
                 </div>
                 
-                <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                  {[...Array(7)].map((_, i) => {
+                <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar-horizontal">
+                  {[...Array(14)].map((_, i) => {
                     const date = new Date();
                     date.setDate(date.getDate() + i);
                     const dateStr = date.toISOString().split('T')[0];
@@ -3610,30 +3940,28 @@ export default function App() {
                     return (
                       <button
                         key={i}
-                        onClick={() => {
-                          setDeliveryDetails({...deliveryDetails, deliveryDate: dateStr});
-                        }}
-                        className={`flex flex-col items-center justify-center min-w-[60px] h-16 rounded-xl border transition-all ${
+                        onClick={() => setDeliveryDetails({...deliveryDetails, deliveryDate: dateStr})}
+                        className={`flex flex-col items-center justify-center min-w-[100px] h-28 rounded-3xl border-2 transition-all group ${
                           isSelected 
-                          ? 'bg-emerald-deep border-emerald-deep text-white shadow-md scale-105' 
-                          : 'bg-white border-emerald-deep/10 text-gray-600 hover:border-emerald-deep/30'
+                          ? 'bg-emerald-deep border-emerald-deep text-white shadow-2xl scale-105 z-10' 
+                          : 'bg-white border-emerald-deep/5 text-emerald-deep/40 hover:border-emerald-deep/20'
                         }`}
                       >
-                        <span className="text-[10px] uppercase font-bold opacity-70">
+                        <span className="text-[10px] uppercase font-bold tracking-widest mb-2 opacity-60 group-hover:opacity-100 transition-opacity">
                           {date.toLocaleDateString('en-US', { weekday: 'short' })}
                         </span>
-                        <span className="text-lg font-bold">
+                        <span className="text-3xl font-heading font-bold italic">
                           {date.getDate()}
+                        </span>
+                        <span className="text-[8px] uppercase font-bold tracking-[0.2em] mt-1 opacity-40">
+                          {date.toLocaleDateString('en-US', { month: 'short' })}
                         </span>
                       </button>
                     );
                   })}
                 </div>
-              </div>
 
-              <div className="grid gap-3">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-emerald-deep/60">Delivery Time</Label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {['09:00', '11:00', '13:00', '15:00', '17:00', '19:00'].map((time) => {
                     const isSelected = deliveryDetails.deliveryTime === time;
                     const displayTime = new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', { 
@@ -3644,15 +3972,13 @@ export default function App() {
                     return (
                       <Button
                         key={time}
-                        variant={isSelected ? "default" : "outline"}
-                        className={`h-10 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all ${
+                        variant="ghost"
+                        className={`h-16 text-[10px] font-bold uppercase tracking-widest rounded-2xl transition-all border ${
                           isSelected 
-                          ? 'bg-emerald-deep text-white hover:bg-emerald-deep/90 shadow-md' 
-                          : 'border-emerald-deep/10 text-emerald-deep hover:bg-emerald-deep/5'
+                          ? 'bg-emerald-deep text-white border-emerald-deep shadow-lg scale-105' 
+                          : 'bg-emerald-deep/[0.02] border-emerald-deep/5 text-emerald-deep/40 hover:bg-emerald-deep/10'
                         }`}
-                        onClick={() => {
-                          setDeliveryDetails({...deliveryDetails, deliveryTime: time});
-                        }}
+                        onClick={() => setDeliveryDetails({...deliveryDetails, deliveryTime: time})}
                       >
                         {displayTime}
                       </Button>
@@ -3660,114 +3986,126 @@ export default function App() {
                   })}
                 </div>
               </div>
-              
-              <div className="bg-emerald-deep/5 p-5 rounded-2xl space-y-3 mt-4 border border-emerald-deep/10">
-                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-emerald-deep/60">
-                  <span>Items ({cart.length})</span>
-                  <span>Rs. {totalAmount}</span>
+
+              {/* Summary Small */}
+              <div className="bg-emerald-deep/[0.03] p-10 rounded-[3rem] border border-emerald-deep/5 space-y-6">
+                <div className="flex items-center justify-between text-[11px] font-bold text-emerald-deep uppercase tracking-[0.2em]">
+                  <span className="opacity-40 italic">Collection Count</span>
+                  <span>{cart.length} Masterpiece{cart.length > 1 ? 's' : ''}</span>
                 </div>
-                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-emerald-deep/60">
-                  <span>{deliveryDetails.deliveryMethod === 'pickup' ? 'Pickup' : 'Delivery Fee'}</span>
-                  <span className="text-emerald-deep font-bold">{deliveryDetails.deliveryMethod === 'pickup' ? 'AT SHOP' : 'FREE'}</span>
-                </div>
-                <Separator className="bg-emerald-deep/10" />
-                <div className="flex items-center justify-between font-bold text-emerald-deep">
-                  <span className="text-xs uppercase tracking-widest">Grand Total</span>
-                  <span className="text-xl font-heading italic">Rs. {totalAmount}</span>
+                <Separator className="bg-emerald-deep/5" />
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <span className="text-[11px] font-bold text-emerald-deep/40 uppercase tracking-[0.2em] italic">Total Artisan Value</span>
+                    <p className="text-4xl font-heading font-bold text-emerald-deep italic tracking-tighter">Rs. {totalAmount}</p>
+                  </div>
+                  <div className="text-right space-y-1">
+                    <span className="text-[11px] font-bold text-emerald-deep/40 uppercase tracking-[0.2em] italic">Fulfillment</span>
+                    <p className="text-xs font-bold text-emerald-deep uppercase tracking-widest">{deliveryDetails.deliveryMethod.toUpperCase()}</p>
+                  </div>
                 </div>
               </div>
-              
-              <Separator className="my-2 bg-emerald-deep/10" />
-              <Button 
-                className="w-full bg-emerald-deep hover:bg-emerald-deep/90 text-white h-16 rounded-2xl font-bold text-xs uppercase tracking-widest shadow-xl shadow-emerald-deep/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                onClick={() => {
-                  const errors: { [key: string]: string } = {};
-                  if (!deliveryDetails.fullName.trim()) errors.fullName = 'Full Name is required';
-                  if (!deliveryDetails.phone.trim()) errors.phone = 'Phone Number is required';
-                  if (deliveryDetails.deliveryMethod !== 'pickup' && !deliveryDetails.address.trim()) errors.address = 'Delivery Address is required';
-
-                  if (Object.keys(errors).length > 0) {
-                    setFormErrors(errors);
-                    toast.error('Please fill in all required fields');
-                    return;
-                  }
-                  setFormErrors({});
-                  setIsOrderModalOpen(false);
-                  setIsConfirmationOpen(true);
-                }}
-              >
-                Review Order Details
-              </Button>
             </div>
+          </div>
+          <div className="p-10 md:p-14 bg-gray-50 flex gap-6 shrink-0">
+            <Button 
+              variant="ghost" 
+              className="flex-1 h-20 rounded-[2rem] font-bold uppercase tracking-widest text-[10px] text-emerald-deep/30 hover:text-emerald-deep h-16"
+              onClick={() => setIsOrderModalOpen(false)}
+            >
+              Continue Browsing
+            </Button>
+            <Button 
+              className="flex-[2] bg-emerald-deep hover:bg-emerald-deep/90 text-white h-20 rounded-[2rem] font-bold uppercase tracking-[0.3em] text-[10px] shadow-2xl shadow-emerald-deep/20 transition-all hover:scale-[1.02] active:scale-[0.98] h-16"
+              onClick={() => {
+                const errors: { [key: string]: string } = {};
+                if (!deliveryDetails.fullName.trim()) errors.fullName = 'Full Name is required';
+                if (!deliveryDetails.phone.trim()) errors.phone = 'Phone Number is required';
+                if (deliveryDetails.deliveryMethod !== 'pickup' && !deliveryDetails.address.trim()) errors.address = 'Delivery Address is required';
+
+                if (Object.keys(errors).length > 0) {
+                  setFormErrors(errors);
+                  toast.error('Please complete Artisanal details');
+                  return;
+                }
+                setFormErrors({});
+                setIsOrderModalOpen(false);
+                setIsConfirmationOpen(true);
+              }}
+            >
+              Review Order details
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Order Confirmation Dialog */}
       <Dialog open={isConfirmationOpen} onOpenChange={setIsConfirmationOpen}>
-        <DialogContent className="sm:max-w-[500px] w-[95vw] max-h-[90vh] flex flex-col overflow-hidden rounded-[2.5rem] p-0 border-none shadow-2xl">
-          <div className="bg-emerald-deep p-6 md:p-8 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
-            <DialogHeader className="relative z-10">
-              <DialogTitle className="text-xl md:text-2xl font-heading italic">Review Your Order</DialogTitle>
-              <DialogDescription className="text-white/60 text-xs">Please confirm your details before proceeding.</DialogDescription>
+        <DialogContent className="sm:max-w-[550px] w-[95vw] max-h-[90vh] flex flex-col overflow-hidden rounded-[4rem] p-0 border-none shadow-2xl bg-white">
+          <div className="bg-emerald-deep p-12 md:p-14 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-48 h-48 bg-white/10 rounded-full blur-3xl opacity-50" />
+            <DialogHeader className="relative z-10 space-y-4">
+              <div className="h-14 w-14 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20">
+                <ShoppingBag className="h-7 w-7 text-white" />
+              </div>
+              <DialogTitle className="text-4xl md:text-5xl font-heading font-bold italic uppercase tracking-tighter">Review Selection</DialogTitle>
+              <DialogDescription className="text-white/50 text-[10px] font-bold uppercase tracking-[0.4em]">One final look at your masterpiece</DialogDescription>
             </DialogHeader>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar space-y-6 md:space-y-8">
+          <div className="flex-1 overflow-y-auto p-10 md:p-12 custom-scrollbar space-y-12">
             {/* Items Summary */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-deep uppercase tracking-[0.2em]">
-                <ShoppingBag className="h-3 w-3" />
-                <span>Order Summary</span>
-              </div>
-              <div className="space-y-3">
+            <div className="space-y-6">
+              <p className="text-[10px] font-bold text-emerald-deep uppercase tracking-[0.4em] flex items-center gap-4">
+                <span className="h-px w-8 bg-emerald-deep/20" /> Selection Invoice
+              </p>
+              <div className="space-y-4">
                 {cart.map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center text-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-emerald-deep/5 flex items-center justify-center text-emerald-deep font-bold text-xs">
+                  <div key={idx} className="flex justify-between items-center p-5 bg-emerald-deep/[0.02] rounded-3xl border border-emerald-deep/5 transition-all hover:bg-emerald-deep/[0.04]">
+                    <div className="flex items-center gap-5">
+                      <div className="w-14 h-14 rounded-2xl bg-white border border-emerald-deep/5 flex items-center justify-center text-emerald-deep font-heading font-bold italic text-xl shadow-sm">
                         {item.quantity}x
                       </div>
-                      <span className="font-medium text-gray-700">{item.name}</span>
+                      <div className="flex flex-col">
+                        <span className="font-heading font-bold text-xl text-emerald-deep italic">{item.cakeName}</span>
+                        <span className="text-[9px] font-bold text-emerald-deep/30 uppercase tracking-widest">{item.cakeDesign}</span>
+                      </div>
                     </div>
-                    <span className="font-bold text-emerald-deep">Rs. {item.price * item.quantity}</span>
+                    <span className="font-heading font-bold text-2xl text-emerald-deep/60 italic leading-none">Rs. {item.price * item.quantity}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <Separator className="bg-emerald-deep/5" />
-
             {/* Delivery Info */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-deep uppercase tracking-[0.2em]">
-                <Truck className="h-3 w-3" />
-                <span>Delivery Information</span>
-              </div>
-              <div className="grid grid-cols-2 gap-4 md:gap-6 bg-emerald-deep/5 p-4 md:p-6 rounded-2xl border border-emerald-deep/10">
+            <div className="space-y-6">
+              <p className="text-[10px] font-bold text-emerald-deep uppercase tracking-[0.4em] flex items-center gap-4">
+                <span className="h-px w-8 bg-emerald-deep/20" /> Collection Details
+              </p>
+              <div className="grid grid-cols-2 gap-8 bg-emerald-deep/[0.03] p-8 rounded-[2.5rem] border border-emerald-deep/5 shadow-inner">
                 <div className="space-y-1">
-                  <p className="text-[8px] font-bold text-emerald-deep/40 uppercase tracking-widest">Customer</p>
-                  <p className="text-sm font-bold text-emerald-deep">{deliveryDetails.fullName}</p>
+                  <p className="text-[8px] font-bold text-emerald-deep/20 uppercase tracking-widest italic">Recipient</p>
+                  <p className="text-base font-bold text-emerald-deep font-heading italic">{deliveryDetails.fullName}</p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[8px] font-bold text-emerald-deep/40 uppercase tracking-widest">Contact</p>
-                  <p className="text-sm font-bold text-emerald-deep">{deliveryDetails.phone}</p>
+                  <p className="text-[8px] font-bold text-emerald-deep/20 uppercase tracking-widest italic">Channel</p>
+                  <p className="text-base font-bold text-emerald-deep font-heading italic">{deliveryDetails.phone}</p>
                 </div>
                 <div className="col-span-2 space-y-1">
-                  <p className="text-[8px] font-bold text-emerald-deep/40 uppercase tracking-widest">
-                    {deliveryDetails.deliveryMethod === 'pickup' ? 'Pickup Location' : 'Delivery Address'}
+                  <p className="text-[8px] font-bold text-emerald-deep/20 uppercase tracking-widest italic">
+                    {deliveryDetails.deliveryMethod === 'pickup' ? 'Boutique' : 'Destination'}
                   </p>
-                  <p className="text-sm font-bold text-emerald-deep">
+                  <p className="text-base font-bold text-emerald-deep font-heading italic leading-relaxed">
                     {deliveryDetails.deliveryMethod === 'pickup' ? 'Koseli Artisan Bakery, Thamel' : deliveryDetails.address}
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[8px] font-bold text-emerald-deep/40 uppercase tracking-widest">Scheduled Date</p>
-                  <p className="text-sm font-bold text-emerald-deep">{deliveryDetails.deliveryDate}</p>
+                  <p className="text-[8px] font-bold text-emerald-deep/20 uppercase tracking-widest italic">Target Date</p>
+                  <p className="text-base font-bold text-emerald-deep font-heading italic">{deliveryDetails.deliveryDate}</p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[8px] font-bold text-emerald-deep/40 uppercase tracking-widest">Preferred Time</p>
-                  <p className="text-sm font-bold text-emerald-deep">{deliveryDetails.deliveryTime}</p>
+                  <p className="text-[8px] font-bold text-emerald-deep/20 uppercase tracking-widest italic">Hand-off Time</p>
+                  <p className="text-base font-bold text-emerald-deep font-heading italic">{deliveryDetails.deliveryTime}</p>
                 </div>
               </div>
             </div>
@@ -3847,58 +4185,57 @@ export default function App() {
         </DialogContent>
       </Dialog>
 
-      {/* My Account Dialog */}
       <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-[3rem] border-emerald-deep/5 shadow-2xl overflow-hidden p-0">
-          <div className="bg-emerald-deep p-10 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <DialogHeader className="relative z-10">
-              <DialogTitle className="text-3xl font-heading font-bold italic">My Sanctuary</DialogTitle>
-              <DialogDescription className="text-white/60 text-[10px] font-bold uppercase tracking-widest mt-2">Manage your artisanal profile.</DialogDescription>
+        <DialogContent className="sm:max-w-[480px] w-[95vw] rounded-[4rem] border-none shadow-2xl overflow-hidden p-0 bg-white">
+          <div className="bg-emerald-deep p-12 md:p-16 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <DialogHeader className="relative z-10 space-y-4 text-center">
+              <DialogTitle className="text-4xl md:text-5xl font-heading font-bold italic uppercase tracking-tighter">Artisan Profile</DialogTitle>
+              <DialogDescription className="text-white/50 text-[10px] font-bold uppercase tracking-[0.4em]">The custodian of taste</DialogDescription>
             </DialogHeader>
           </div>
-          <div className="p-10 space-y-8">
+          <div className="p-10 md:p-14 space-y-10">
             {user && (
-              <div className="space-y-8">
-                <div className="flex items-center gap-6 p-6 bg-emerald-deep/5 rounded-[2rem] border border-emerald-deep/5">
+              <div className="space-y-10">
+                <div className="flex items-center gap-8 p-10 bg-emerald-deep/[0.03] rounded-[3rem] border border-emerald-deep/5 shadow-inner">
                   <div className="relative">
-                    <img src={user.photoURL} alt={user.displayName} className="h-20 w-20 rounded-full border-4 border-white shadow-xl" />
-                    <div className="absolute -bottom-1 -right-1 h-6 w-6 bg-emerald-deep rounded-full border-2 border-white flex items-center justify-center">
-                      <Star className="h-3 w-3 text-white fill-current" />
+                    <img src={user.photoURL} alt={user.displayName} className="h-24 w-24 rounded-full border-4 border-white shadow-2xl bg-white" />
+                    <div className="absolute -bottom-2 -right-2 h-10 w-10 bg-emerald-deep rounded-full border-4 border-white flex items-center justify-center shadow-lg">
+                      <Star className="h-4 w-4 text-white fill-current" />
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-heading font-bold text-xl text-emerald-deep italic">{user.displayName}</h3>
-                    <p className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">{user.email}</p>
+                    <h3 className="font-heading font-bold text-3xl text-emerald-deep italic leading-tight">{user.displayName}</h3>
+                    <p className="text-[10px] font-semibold text-emerald-deep/30 uppercase tracking-[0.2em] mt-1">{user.email}</p>
                   </div>
                 </div>
-                <div className="grid gap-3">
+                <div className="grid gap-4">
                   {isAdmin && (
                     <Button 
                       variant="outline" 
-                      className="justify-start gap-4 h-16 rounded-2xl border-emerald-deep/10 hover:bg-emerald-deep hover:text-white transition-all group" 
+                      className="justify-start gap-6 h-20 px-8 rounded-[1.5rem] border-emerald-deep/10 hover:bg-emerald-deep hover:text-white transition-all group group relative overflow-hidden" 
                       onClick={() => { setActiveView('admin'); setIsProfileOpen(false); }}
                     >
-                      <LayoutDashboard className="h-5 w-5 text-emerald-deep group-hover:text-white transition-colors" />
-                      <span className="text-[10px] font-bold uppercase tracking-widest">Admin Control Center</span>
+                      <LayoutDashboard className="h-6 w-6 text-emerald-deep group-hover:text-white transition-colors" />
+                      <span className="text-xs font-bold uppercase tracking-[0.2em]">Curator Workspace</span>
                     </Button>
                   )}
                   <Button 
                     variant="outline" 
-                    className="justify-start gap-4 h-16 rounded-2xl border-emerald-deep/10 hover:bg-emerald-deep hover:text-white transition-all group" 
+                    className="justify-start gap-6 h-20 px-8 rounded-[1.5rem] border-emerald-deep/10 hover:bg-emerald-deep hover:text-white transition-all group relative overflow-hidden" 
                     onClick={() => { setIsOrdersOpen(true); setIsProfileOpen(false); }}
                   >
-                    <Package className="h-5 w-5 text-emerald-deep group-hover:text-white transition-colors" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">My Masterpiece Orders</span>
+                    <ShoppingBag className="h-6 w-6 text-emerald-deep group-hover:text-white transition-colors" />
+                    <span className="text-xs font-bold uppercase tracking-[0.2em]">Collection History</span>
                   </Button>
-                  <Separator className="my-4 opacity-50" />
+                  <Separator className="my-6 opacity-30 h-px bg-emerald-deep/10" />
                   <Button 
                     variant="ghost" 
-                    className="justify-start gap-4 h-16 rounded-2xl text-emerald-deep hover:bg-emerald-deep/5 transition-all" 
+                    className="justify-center gap-4 h-16 rounded-2xl text-red-400 hover:bg-red-50 hover:text-red-600 transition-all font-bold uppercase tracking-widest text-[10px]" 
                     onClick={() => { handleSignOut(); setIsProfileOpen(false); }}
                   >
-                    <LogOut className="h-5 w-5" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">Sign Out</span>
+                    <LogOut className="h-4 w-4" />
+                    Archive Session (Sign Out)
                   </Button>
                 </div>
               </div>
@@ -3907,105 +4244,109 @@ export default function App() {
         </DialogContent>
       </Dialog>
 
-      {/* My Orders Dialog */}
       <Dialog open={isOrdersOpen} onOpenChange={setIsOrdersOpen}>
-        <DialogContent className="sm:max-w-[800px] max-h-[85vh] overflow-hidden flex flex-col rounded-3xl p-0">
-          <div className="bg-emerald-deep p-8 text-white relative overflow-hidden shrink-0">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <DialogHeader className="relative z-10">
-              <DialogTitle className="text-2xl font-heading italic">My Orders</DialogTitle>
-              <DialogDescription className="text-white/60 text-[10px] font-bold uppercase tracking-widest mt-2">Track your current and past cake orders.</DialogDescription>
+        <DialogContent className="sm:max-w-[850px] w-[95vw] max-h-[85vh] overflow-hidden flex flex-col rounded-[4rem] border-none shadow-[0_40px_100px_rgba(0,0,0,0.15)] bg-white p-0">
+          <div className="bg-emerald-deep p-12 md:p-16 text-white relative overflow-hidden shrink-0">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <DialogHeader className="relative z-10 space-y-4">
+              <div className="h-16 w-16 bg-white/10 backdrop-blur-md rounded-[1rem] flex items-center justify-center border border-white/20">
+                <Box className="h-8 w-8 text-white" />
+              </div>
+              <DialogTitle className="text-4xl md:text-6xl font-heading font-bold italic uppercase tracking-tighter">Collection Archive</DialogTitle>
+              <DialogDescription className="text-white/50 text-[10px] font-bold uppercase tracking-[0.4em]">Review your sweet history</DialogDescription>
             </DialogHeader>
           </div>
-          <div className="flex-1 p-6 md:p-8 overflow-y-auto custom-scrollbar min-h-0 relative">
-            <div className="grid gap-6 pr-2 pb-6">
+          <div className="flex-1 p-10 md:p-14 overflow-y-auto custom-scrollbar min-h-0 relative">
+            <div className="grid gap-10 pr-2 pb-10">
               {orders.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
-                  <div className="bg-emerald-deep/5 p-6 rounded-full">
-                    <Package className="h-12 w-12 text-emerald-deep/20" />
+                <div className="flex flex-col items-center justify-center py-24 text-center gap-6">
+                  <div className="bg-emerald-deep/[0.03] p-10 rounded-[3rem] border border-emerald-deep/5">
+                    <Package className="h-16 w-16 text-emerald-deep/10" />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-lg">No orders yet</h3>
-                    <p className="text-sm text-muted-foreground">Your sweet journey starts with your first order!</p>
+                  <div className="space-y-2">
+                    <h3 className="font-heading font-bold text-2xl text-emerald-deep italic leading-tight uppercase">Empty Collection</h3>
+                    <p className="text-sm text-emerald-deep/40 font-medium italic">Your artisanal journey is awaiting its first masterpiece.</p>
                   </div>
-                  <Button className="bg-emerald-deep hover:bg-emerald-deep/90" onClick={() => setIsOrdersOpen(false)}>Browse Cakes</Button>
+                  <Button 
+                    className="bg-emerald-deep hover:bg-emerald-deep/90 text-white rounded-[1.5rem] px-8 h-14 font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-deep/10" 
+                    onClick={() => setIsOrdersOpen(false)}
+                  >
+                    Begin Exploration
+                  </Button>
                 </div>
               ) : (
                 orders.map((order) => (
-                  <Card key={order.id} className="overflow-hidden border-emerald-deep/10 shadow-sm">
-                    <div className="bg-emerald-deep h-1.5 w-full" />
-                    <CardHeader className="flex flex-row items-center justify-between bg-emerald-deep/5 py-4">
-                      <div>
-                        <CardTitle className="text-sm font-bold">Order #{order.id.slice(-6)}</CardTitle>
-                        <CardDescription className="text-[10px] uppercase tracking-wider font-semibold">{new Date(order.createdAt?.seconds * 1000).toLocaleDateString()}</CardDescription>
+                  <Card key={order.id} className="overflow-hidden border-emerald-deep/5 shadow-sm rounded-[2.5rem] bg-emerald-deep/[0.01]">
+                    <div className="bg-emerald-deep h-2 w-full" />
+                    <CardHeader className="flex flex-row items-center justify-between bg-white py-8 px-10 border-b border-emerald-deep/[0.03]">
+                      <div className="space-y-1">
+                        <CardTitle className="text-xl font-heading font-bold italic text-emerald-deep">#{order.readableId || order.id.slice(-6).toUpperCase()}</CardTitle>
+                        <CardDescription className="text-[9px] uppercase tracking-[0.3em] font-bold text-emerald-deep/20">{new Date(order.createdAt?.seconds * 1000).toLocaleDateString()}</CardDescription>
                       </div>
-                      <Badge className={
-                        order.status === 'delivered' ? 'bg-emerald-deep' : 
-                        order.status === 'pending' ? 'bg-emerald-deep/60' : 
-                        order.status === 'ready' ? 'bg-emerald-deep' : 'bg-emerald-deep/40'
-                      }>
-                        {order.status.toUpperCase()}
+                      <Badge className={`px-4 py-2 rounded-full font-bold text-[9px] uppercase tracking-widest border-none ${
+                        order.status === 'delivered' ? 'bg-emerald-deep text-white' : 
+                        order.status === 'pending' ? 'bg-emerald-deep/60 text-white' : 
+                        order.status === 'ready' ? 'bg-emerald-deep text-white' : 'bg-emerald-deep/40 text-white'
+                      }`}>
+                        {order.status}
                       </Badge>
                     </CardHeader>
-                    <CardContent className="pt-6">
-                      <div className="grid gap-8 md:grid-cols-3">
-                        <div className="md:col-span-2">
-                          <p className="text-xs font-bold mb-6 flex items-center gap-2 text-emerald-deep uppercase tracking-widest">
-                            <Clock className="h-4 w-4 text-emerald-deep" /> Delivery Timeline
+                    <CardContent className="p-10 bg-white/50 backdrop-blur-sm">
+                      <div className="grid gap-12 md:grid-cols-3">
+                        <div className="md:col-span-2 space-y-8">
+                          <p className="text-[10px] font-bold flex items-center gap-3 text-emerald-deep/30 uppercase tracking-[0.3em] font-heading">
+                            <Clock className="h-3.5 w-3.5 text-emerald-deep/20" /> Fulfillment Journey
                           </p>
-                          <div className="relative space-y-8 before:absolute before:left-[7px] before:top-2 before:h-[calc(100%-16px)] before:w-[2px] before:bg-emerald-deep/10">
+                          <div className="relative space-y-10 pl-6 before:absolute before:left-0 before:top-2 before:h-full before:w-px before:bg-emerald-deep/10">
                             {order.timeline.map((t, i) => (
-                              <div key={i} className="relative pl-8">
-                                <div className="absolute left-0 top-1.5 h-4 w-4 rounded-full border-2 border-white bg-emerald-deep shadow-md" />
-                                <div className="flex flex-col gap-1.5 bg-white p-3 rounded-xl border border-emerald-deep/5 shadow-sm">
+                              <div key={i} className="relative">
+                                <div className="absolute -left-[27px] top-1.5 h-4 w-4 rounded-full border-[3px] border-white bg-emerald-deep shadow-md" />
+                                <div className="space-y-1">
                                   <div className="flex items-center justify-between">
-                                    <p className="text-xs font-bold uppercase tracking-wider text-emerald-deep">{t.status}</p>
-                                    <p className="text-[10px] font-medium text-muted-foreground">{new Date(t.timestamp).toLocaleString()}</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-deep">{t.status}</p>
+                                    <p className="text-[9px] font-bold text-emerald-deep/30">{new Date(t.timestamp).toLocaleString()}</p>
                                   </div>
-                                  <p className="text-sm text-muted-foreground leading-relaxed">{t.message}</p>
+                                  <p className="text-sm text-emerald-deep/60 italic leading-relaxed">"{t.message}"</p>
                                 </div>
                               </div>
                             ))}
                           </div>
-                        </div>
-                        
-                        <div className="flex flex-col gap-5 bg-emerald-deep/[0.02] p-5 rounded-2xl border border-emerald-deep/5">
-                          <div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Estimated Delivery</p>
-                            <p className="text-sm font-bold text-emerald-deep">
-                              {(() => {
-                                const createdAt = order.createdAt?.seconds ? new Date(order.createdAt.seconds * 1000) : new Date();
-                                const estimated = new Date(createdAt.getTime() + 24 * 60 * 60 * 1000);
-                                return estimated.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
-                              })()}
-                            </p>
-                          </div>
+
                           <Separator className="bg-emerald-deep/10" />
                           <div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Total Amount</p>
-                            <p className="text-2xl font-bold text-emerald-deep">Rs. {order.totalAmount}</p>
-                          </div>
-                          <Separator className="bg-emerald-deep/10" />
-                          <div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Delivery Schedule</p>
-                            <p className="text-sm font-bold text-emerald-deep">{new Date(order.deliveryDetails.deliveryDate).toLocaleDateString()} at {new Date(`2000-01-01T${order.deliveryDetails.deliveryTime}`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</p>
-                          </div>
-                          <Separator className="bg-emerald-deep/10" />
-                          <div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Delivery Address</p>
-                            <p className="text-sm font-medium text-gray-700">{order.deliveryDetails.address}</p>
-                          </div>
-                          <Separator className="bg-emerald-deep/10" />
-                          <div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Items</p>
-                            <ul className="text-xs space-y-2">
+                            <p className="text-[10px] font-bold text-emerald-deep uppercase tracking-widest mb-2 font-heading italic">Items In Collection</p>
+                            <ul className="grid gap-4">
                               {order.items.map((item, i) => (
-                                <li key={i} className="flex justify-between items-center bg-white p-2 rounded-lg border border-emerald-deep/5">
-                                  <span className="font-medium">{item.cakeName}</span>
-                                  <span className="bg-emerald-deep/5 px-2 py-0.5 rounded-md font-bold text-emerald-deep">x{item.quantity}</span>
+                                <li key={i} className="flex justify-between items-center bg-white p-6 rounded-2xl border border-emerald-deep/5 shadow-sm transition-all hover:shadow-md">
+                                  <div className="space-y-1">
+                                    <span className="font-heading font-bold text-lg text-emerald-deep italic">{item.cakeName}</span>
+                                    <p className="text-[8px] font-bold text-emerald-deep/30 uppercase tracking-widest">{item.cakeDesign}</p>
+                                  </div>
+                                  <span className="bg-emerald-deep text-white px-4 py-2 rounded-xl font-bold text-xs">x{item.quantity}</span>
                                 </li>
                               ))}
                             </ul>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col gap-8">
+                          <div className="bg-emerald-deep/[0.03] p-8 rounded-[2rem] border border-emerald-deep/5 space-y-6">
+                            <div className="space-y-1">
+                              <p className="text-[8px] font-bold text-emerald-deep/20 uppercase tracking-widest italic">Collection Value</p>
+                              <p className="text-3xl font-heading font-bold text-emerald-deep italic tracking-tighter leading-none">Rs. {order.totalAmount}</p>
+                            </div>
+                            <Separator className="bg-emerald-deep/5" />
+                            <div className="space-y-1">
+                              <p className="text-[8px] font-bold text-emerald-deep/20 uppercase tracking-widest italic">Hand-off Schedule</p>
+                              <p className="text-sm font-bold text-emerald-deep italic leading-relaxed">
+                                {new Date(order.deliveryDetails.deliveryDate).toLocaleDateString()} at {new Date(`2000-01-01T${order.deliveryDetails.deliveryTime}`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                              </p>
+                            </div>
+                            <Separator className="bg-emerald-deep/5" />
+                            <div className="space-y-1">
+                              <p className="text-[8px] font-bold text-emerald-deep/20 uppercase tracking-widest italic">Destination</p>
+                              <p className="text-sm font-medium text-emerald-deep/60 leading-relaxed italic">{order.deliveryDetails.address || 'Boutique Pickup'}</p>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -4018,153 +4359,181 @@ export default function App() {
         </DialogContent>
       </Dialog>
 
-      {/* Product Form Dialog */}
       <Dialog open={isProductFormOpen} onOpenChange={setIsProductFormOpen}>
-        <DialogContent className="sm:max-w-[500px] rounded-3xl border-emerald-deep/10">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-heading text-emerald-deep font-bold">{editingProduct ? 'Edit Cake' : 'Add New Cake'}</DialogTitle>
-            <DialogDescription>Fill in the details for your sweet creation.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-6 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="p-name" className="text-xs font-bold uppercase tracking-widest text-emerald-deep/60">Cake Name</Label>
-              <Input id="p-name" value={productFormData.name} onChange={(e) => setProductFormData({...productFormData, name: e.target.value})} className="rounded-xl border-emerald-deep/10 focus:ring-emerald-deep" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="p-desc" className="text-xs font-bold uppercase tracking-widest text-emerald-deep/60">Description</Label>
-              <Input id="p-desc" value={productFormData.description} onChange={(e) => setProductFormData({...productFormData, description: e.target.value})} className="rounded-xl border-emerald-deep/10 focus:ring-emerald-deep" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="p-price" className="text-xs font-bold uppercase tracking-widest text-emerald-deep/60">Price (Rs.)</Label>
-                <Input id="p-price" type="number" value={productFormData.price} onChange={(e) => setProductFormData({...productFormData, price: Number(e.target.value)})} className="rounded-xl border-emerald-deep/10 focus:ring-emerald-deep" />
+        <DialogContent className="sm:max-w-[550px] w-[95vw] rounded-[4rem] border-none shadow-2xl p-0 overflow-hidden bg-white">
+          <div className="bg-emerald-deep p-12 md:p-14 text-white relative overflow-hidden shrink-0">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <DialogHeader className="relative z-10 space-y-4">
+              <div className="h-14 w-14 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20">
+                <ChefHat className="h-7 w-7 text-white" />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="p-cat" className="text-xs font-bold uppercase tracking-widest text-emerald-deep/60">Category</Label>
-                <select 
-                  id="p-cat" 
-                  value={productFormData.category} 
-                  onChange={(e) => setProductFormData({...productFormData, category: e.target.value as any})}
-                  className="flex h-10 w-full rounded-xl border border-emerald-deep/10 bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-deep focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {['Birthday', 'Anniversary', 'Wedding', 'Cupcakes', 'Pastries', 'Accessories', 'Combos'].map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
+              <DialogTitle className="text-3xl md:text-5xl font-heading font-bold italic uppercase tracking-tighter">{editingProduct ? 'Curate Masterpiece' : 'Birth New Creation'}</DialogTitle>
+              <DialogDescription className="text-white/50 text-[10px] font-bold uppercase tracking-[0.4em]">Define the artisanal properties</DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="p-10 md:p-12 space-y-10 overflow-y-auto max-h-[60vh] custom-scrollbar">
+            <div className="grid gap-10">
+              <div className="space-y-4">
+                <Label htmlFor="p-name" className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-deep/40 ml-4 italic">Bake Title</Label>
+                <Input id="p-name" value={productFormData.name} onChange={(e) => setProductFormData({...productFormData, name: e.target.value})} className="rounded-2xl border-emerald-deep/10 focus:ring-emerald-deep/5 h-16 bg-emerald-deep/[0.01] shadow-inner text-lg font-medium" />
               </div>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="p-img" className="text-xs font-bold uppercase tracking-widest text-emerald-deep/60">Image</Label>
-              <div className="flex flex-col gap-4">
-                {productFormData.imageUrl && (
-                  <div className="h-32 w-full rounded-2xl overflow-hidden border-emerald-deep/10">
-                    <img src={productFormData.imageUrl} alt="Preview" className="h-full w-full object-cover" />
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <Input 
-                    id="p-img" 
-                    placeholder="Paste Image URL or Upload"
-                    value={productFormData.imageUrl} 
-                    onChange={(e) => setProductFormData({...productFormData, imageUrl: e.target.value})} 
-                    className="rounded-xl border-emerald-deep/10 focus:ring-emerald-deep flex-1" 
-                  />
-                  <div className="relative">
-                    <input 
-                      type="file" 
-                      accept="image/*"
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            setProductFormData({...productFormData, imageUrl: reader.result as string});
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
+              
+              <div className="space-y-4">
+                <Label htmlFor="p-desc" className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-deep/40 ml-4 italic">Story & Profile</Label>
+                <Input id="p-desc" value={productFormData.description} onChange={(e) => setProductFormData({...productFormData, description: e.target.value})} className="rounded-2xl border-emerald-deep/10 focus:ring-emerald-deep/5 h-16 bg-emerald-deep/[0.01] shadow-inner text-sm" />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-10">
+                <div className="space-y-4">
+                  <Label htmlFor="p-price" className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-deep/40 ml-4 italic">Artisan Value</Label>
+                  <Input id="p-price" type="number" value={productFormData.price} onChange={(e) => setProductFormData({...productFormData, price: Number(e.target.value)})} className="rounded-2xl border-emerald-deep/10 focus:ring-emerald-deep/5 h-16 bg-emerald-deep/[0.01] shadow-inner text-xl font-heading italic" />
+                </div>
+                <div className="space-y-4">
+                  <Label htmlFor="p-cat" className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-deep/40 ml-4 italic">Collection Group</Label>
+                  <select 
+                    id="p-cat" 
+                    value={productFormData.category} 
+                    onChange={(e) => setProductFormData({...productFormData, category: e.target.value as any})}
+                    className="flex h-16 w-full rounded-2xl border border-emerald-deep/10 bg-emerald-deep/[0.01] px-5 py-2 text-sm font-bold uppercase tracking-widest ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-deep/5 shadow-inner"
+                  >
+                    {['Birthday', 'Anniversary', 'Wedding', 'Cupcakes', 'Pastries', 'Accessories', 'Combos'].map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              
+              <div className="space-y-6">
+                <Label htmlFor="p-img" className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-deep/40 ml-4 italic">Visual Asset</Label>
+                <div className="flex flex-col gap-6 p-6 bg-emerald-deep/[0.03] rounded-[2.5rem] border border-emerald-deep/5">
+                  {productFormData.imageUrl && (
+                    <div className="h-48 w-full rounded-[2rem] overflow-hidden border border-emerald-deep/10 shadow-2xl bg-white">
+                      <img src={productFormData.imageUrl} alt="Preview" className="h-full w-full object-cover" />
+                    </div>
+                  )}
+                  <div className="flex gap-4">
+                    <Input 
+                      id="p-img" 
+                      placeholder="Artisan image URL..."
+                      value={productFormData.imageUrl} 
+                      onChange={(e) => setProductFormData({...productFormData, imageUrl: e.target.value})} 
+                      className="rounded-2xl border-emerald-deep/10 focus:ring-emerald-deep/5 h-14 bg-white flex-1 text-xs" 
                     />
-                    <Button variant="outline" className="rounded-xl border-emerald-deep/10 h-full">
-                      <ImageIcon className="h-4 w-4" />
-                    </Button>
+                    <div className="relative">
+                      <input 
+                        type="file" 
+                        accept="image/*"
+                        className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setProductFormData({...productFormData, imageUrl: reader.result as string});
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                      <Button variant="outline" className="rounded-2xl border-emerald-deep/10 h-14 w-14 bg-white hover:bg-emerald-deep hover:text-white transition-all">
+                        <Camera className="h-5 w-5" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="p-char" className="text-xs font-bold uppercase tracking-widest text-emerald-deep/60">Characteristics (comma separated)</Label>
-              <Input id="p-char" value={productFormData.characteristics.join(', ')} onChange={(e) => setProductFormData({...productFormData, characteristics: e.target.value.split(',').map(s => s.trim())})} className="rounded-xl border-emerald-deep/10 focus:ring-emerald-deep" />
-            </div>
-            <div className="flex items-center gap-3 bg-emerald-deep/5 p-4 rounded-2xl border border-emerald-deep/5">
-              <input 
-                type="checkbox" 
-                id="p-stock" 
-                checked={productFormData.inStock} 
-                onChange={(e) => setProductFormData({...productFormData, inStock: e.target.checked})}
-                className="h-5 w-5 rounded border-emerald-deep/20 text-emerald-deep focus:ring-emerald-deep"
-              />
-              <Label htmlFor="p-stock" className="text-xs font-bold uppercase tracking-widest text-emerald-deep cursor-pointer">Product is In Stock</Label>
+
+              <div className="flex items-center gap-4 bg-emerald-deep/[0.05] p-6 rounded-[2rem] border border-emerald-deep/5 transition-all hover:bg-emerald-deep/[0.08]">
+                <input 
+                  type="checkbox" 
+                  id="p-stock" 
+                  checked={productFormData.inStock} 
+                  onChange={(e) => setProductFormData({...productFormData, inStock: e.target.checked})}
+                  className="h-6 w-6 rounded-lg border-emerald-deep/20 text-emerald-deep focus:ring-emerald-deep"
+                />
+                <Label htmlFor="p-stock" className="text-xs font-bold uppercase tracking-widest text-emerald-deep cursor-pointer">Available in Boutique</Label>
+              </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" className="rounded-xl font-bold uppercase tracking-widest text-[10px]" onClick={() => setIsProductFormOpen(false)}>Cancel</Button>
-            <Button className="bg-emerald-deep hover:bg-emerald-deep/90 rounded-xl font-bold uppercase tracking-widest text-[10px] px-8" onClick={handleSaveProduct}>Save Product</Button>
-          </DialogFooter>
+          <div className="p-10 md:p-12 bg-gray-50 flex gap-4 mt-auto">
+            <Button 
+              variant="ghost" 
+              className="flex-1 h-16 rounded-2xl font-bold uppercase tracking-widest text-[10px] text-emerald-deep/40 hover:text-emerald-deep" 
+              onClick={() => setIsProductFormOpen(false)}
+            >
+              Archive Draft
+            </Button>
+            <Button 
+              className="flex-[2] h-16 bg-emerald-deep hover:bg-emerald-deep/90 text-white rounded-2xl font-bold uppercase tracking-widest text-[10px] shadow-xl shadow-emerald-deep/20 transition-all active:scale-95" 
+              onClick={handleSaveProduct}
+            >
+              Finalize Masterpiece
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
-      {/* Payment Simulation Dialog */}
       <Dialog open={isSimulatingPayment} onOpenChange={setIsSimulatingPayment}>
-        <DialogContent className="sm:max-w-[450px] rounded-[2.5rem] border-none p-0 overflow-hidden shadow-2xl">
+        <DialogContent className="sm:max-w-[500px] w-[95vw] rounded-[4rem] border-none p-0 overflow-hidden shadow-[0_60px_100px_rgba(0,0,0,0.2)] bg-white">
           {paymentStep === 'details' ? (
-            <div className="bg-white">
-              <div className={`p-8 ${paymentMethod === 'esewa' ? 'bg-[#60bb46]' : 'bg-[#5c2d91]'} text-white`}>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-2xl font-bold tracking-tight">{paymentMethod?.toUpperCase()} Payment</h3>
-                  <div className="bg-white/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Simulated</div>
+            <div className="flex flex-col">
+              <div className={`p-12 md:p-16 ${paymentMethod === 'esewa' ? 'bg-[#60bb46]' : 'bg-[#5c2d91]'} text-white relative overflow-hidden`}>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+                <div className="relative z-10 space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-4xl font-heading font-bold italic tracking-tight">{paymentMethod?.toUpperCase()} Gateway</h3>
+                    <div className="bg-white/20 px-4 py-2 rounded-full text-[9px] font-bold uppercase tracking-[0.2em] backdrop-blur-md border border-white/10 italic">Certified Secure</div>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.4em]">Transaction Flow</p>
+                    <p className="text-lg font-medium italic">Simulated Artisan Payment</p>
+                  </div>
                 </div>
-                <p className="text-white/80 text-sm font-medium">Safe & Secure Digital Transaction</p>
               </div>
-              <div className="p-8 space-y-6">
-                <div className="space-y-4">
-                  <div className="grid gap-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Merchant</Label>
-                    <p className="text-sm font-bold text-emerald-deep italic">Koseli Artisan Bakery</p>
+              <div className="p-10 md:p-14 space-y-10">
+                <div className="space-y-8">
+                  <div className="flex justify-between items-center bg-emerald-deep/[0.03] p-8 rounded-[2.5rem] border border-emerald-deep/5">
+                    <div className="space-y-1">
+                      <Label className="text-[9px] font-bold uppercase tracking-[0.3em] text-emerald-deep/30 italic">Merchant</Label>
+                      <p className="text-lg font-heading font-bold text-emerald-deep italic">Koseli Artisan Bakery</p>
+                    </div>
+                    <div className="space-y-1 text-right">
+                      <Label className="text-[9px] font-bold uppercase tracking-[0.3em] text-emerald-deep/30 italic">Collection Value</Label>
+                      <p className="text-3xl font-heading font-bold text-emerald-deep italic">Rs. {totalAmount}</p>
+                    </div>
                   </div>
-                  <div className="grid gap-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Total Amount</Label>
-                    <p className="text-2xl font-heading font-bold text-emerald-deep">Rs. {totalAmount}</p>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Payment ID / Phone</Label>
-                    <Input placeholder="Enter your registered number" defaultValue={deliveryDetails.phone} className="rounded-xl border-emerald-deep/10" />
+                  <div className="space-y-4">
+                    <Label className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-deep/40 ml-4 italic">Artisan Credential</Label>
+                    <Input 
+                      placeholder="Your secure phone or ID..." 
+                      defaultValue={deliveryDetails.phone} 
+                      className="rounded-2xl border-emerald-deep/10 focus:ring-emerald-deep/5 h-20 bg-emerald-deep/[0.01] shadow-inner text-xl font-medium px-8" 
+                    />
                   </div>
                 </div>
-                <div className="bg-emerald-deep/5 p-4 rounded-xl text-[10px] font-bold text-emerald-deep uppercase tracking-widest leading-relaxed text-center">
-                  This is a simulated payment gateway for demonstration purposes.
+                
+                <div className="bg-emerald-deep/[0.02] p-6 rounded-[2rem] text-[10px] font-bold text-emerald-deep/30 uppercase tracking-[0.2em] leading-relaxed text-center italic border border-emerald-deep/5">
+                  "This secure connection is provided for demonstration purposes only. No actual funds will be transferred from your collection."
                 </div>
+                
                 <Button 
-                  className={`w-full h-16 rounded-2xl text-[11px] font-bold uppercase tracking-[0.2em] shadow-lg transition-all ${paymentMethod === 'esewa' ? 'bg-[#60bb46] hover:bg-[#52a13b]' : 'bg-[#5c2d91] hover:bg-[#4d2678]'}`}
-                  onClick={() => {
-                    setCart([]);
-                    setPaymentStep('success');
-                  }}
+                  className={`w-full h-20 rounded-[2.5rem] text-xs font-bold uppercase tracking-[0.4em] shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] ${paymentMethod === 'esewa' ? 'bg-[#60bb46] hover:bg-[#52a13b] shadow-[#60bb46]/20' : 'bg-[#5c2d91] hover:bg-[#4d2678] shadow-[#5c2d91]/20'}`}
+                  onClick={finalizeOnlinePayment}
                 >
-                  Pay Now
+                  Confirm & Transfer Collection
                 </Button>
               </div>
             </div>
           ) : (
-            <div className="bg-white p-12 text-center space-y-8">
-              <div className="relative mx-auto w-24 h-24">
+            <div className="bg-white p-16 md:p-20 text-center space-y-10">
+              <div className="relative mx-auto w-32 h-32 md:w-40 md:h-40">
                 <motion.div 
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute inset-0 bg-emerald-deep rounded-full flex items-center justify-center text-white"
+                  initial={{ scale: 0, rotate: -45 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  className="absolute inset-0 bg-emerald-deep rounded-[3rem] shadow-2xl flex items-center justify-center text-white z-10"
                 >
-                  <CheckCircle2 className="h-12 w-12" />
+                  <CheckCircle2 className="h-16 w-16 md:h-20 md:w-20" strokeWidth={1.5} />
                 </motion.div>
-                <div className="absolute inset-0 bg-emerald-deep rounded-full animate-ping opacity-20" />
+                <div className="absolute inset-0 bg-emerald-deep rounded-[3rem] animate-ping opacity-10" />
               </div>
               <div className="space-y-2">
                 <h3 className="text-3xl font-heading font-bold text-emerald-deep italic">Masterpiece Secured!</h3>
@@ -4177,7 +4546,7 @@ export default function App() {
                 <div className="bg-[#e5e5e0]/30 p-6 rounded-[2rem] border border-emerald-deep/5 space-y-4 text-left">
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">Order ID</span>
-                    <span className="text-xs font-bold text-emerald-deep">#{simulatedOrder.id.slice(-8).toUpperCase()}</span>
+                    <span className="text-xs font-bold text-emerald-deep">#{simulatedOrder.readableId || simulatedOrder.id.slice(-8).toUpperCase()}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] font-bold text-emerald-deep/40 uppercase tracking-widest">Amount</span>
@@ -4201,6 +4570,42 @@ export default function App() {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+        <DialogContent className="sm:max-w-[400px] w-[95vw] rounded-[4rem] border-none shadow-[0_50px_100px_rgba(239,68,68,0.15)] p-0 overflow-hidden bg-white">
+          <div className="bg-red-600 p-12 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="relative z-10 flex flex-col items-center text-center space-y-4">
+              <div className="h-16 w-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20">
+                <Trash2 className="h-8 w-8 text-white" strokeWidth={1.5} />
+              </div>
+              <h2 className="text-3xl font-heading font-bold italic tracking-tighter uppercase leading-none">Delete Piece?</h2>
+              <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.4em]">This action is irreversible</p>
+            </div>
+          </div>
+          <div className="p-10 md:p-12 space-y-10">
+            <p className="text-sm text-center text-gray-500 font-medium leading-relaxed italic">
+              "Confirming this will permanently remove this artisanal creation from the boutique. Are you certain?"
+            </p>
+            <div className="flex flex-col gap-4">
+              <Button 
+                className="h-16 rounded-[1.5rem] bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] uppercase tracking-widest shadow-xl shadow-red-600/10 transition-all active:scale-95"
+                onClick={confirmDeleteProduct}
+              >
+                Yes, Delete Permanently
+              </Button>
+              <Button 
+                variant="ghost" 
+                className="h-16 rounded-[1.5rem] font-bold uppercase tracking-widest text-[10px] text-gray-400 hover:text-emerald-deep"
+                onClick={() => setIsDeleteConfirmOpen(false)}
+              >
+                Retain Masterpiece
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
       <AnimatePresence>
