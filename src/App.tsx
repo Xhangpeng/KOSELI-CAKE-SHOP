@@ -75,7 +75,8 @@ import {
   Play,
   Box,
   ChefHat,
-  Camera
+  Camera,
+  UserCircle
 } from 'lucide-react';
 import { 
   auth, 
@@ -500,44 +501,48 @@ const CartPage = ({
   );
 };
 
-const BottomNav = ({ cartCount, onOpenCart, onOpenAuth, user, onOpenOrders, onOpenProfile, activeView, setView, isAdmin }: { 
+const BottomNav = ({ cartCount, onOpenAuth, user, activeView, setView }: { 
   cartCount: number, 
-  onOpenCart: () => void, 
   onOpenAuth: () => void, 
   user: any, 
-  onOpenOrders: () => void,
-  onOpenProfile: () => void,
   activeView: string,
   setView: (view: string) => void,
-  isAdmin: boolean
 }) => {
-  const navigate = useNavigate();
-  const NavItem = ({ icon: Icon, view, onClick, badge }: any) => {
-    const isActive = activeView === view;
-    return (
-      <button 
-        className={`h-14 w-14 rounded-full flex items-center justify-center transition-all relative ${isActive ? 'bg-white text-emerald-deep shadow-lg scale-110' : 'text-white/60 hover:text-white'}`} 
-        onClick={() => {
-          if (onClick) onClick();
-          else setView(view);
-        }}
-      >
-        <Icon className="h-6 w-6" strokeWidth={isActive ? 2.5 : 1.5} />
-        {badge > 0 && (
-          <span className="absolute top-2 right-2 h-5 w-5 bg-white text-emerald-deep text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-emerald-deep">
-            {badge}
-          </span>
-        )}
-      </button>
-    );
-  };
+  const items = [
+    { id: 'home', icon: HomeIcon, label: 'Home' },
+    { id: 'menu', icon: Grid, label: 'Shop' },
+    { id: 'cart', icon: ShoppingBag, label: 'Cart', badge: cartCount },
+    { id: 'profile', icon: UserIcon, label: 'Account' }
+  ];
 
   return (
-    <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-[400px] h-20 bg-emerald-deep/80 backdrop-blur-2xl border border-white/20 flex items-center justify-around px-4 rounded-full shadow-[0_20px_50px_rgba(0,174,239,0.3)]">
-      <NavItem icon={HomeIcon} view="home" onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
-      <NavItem icon={Grid} view="menu" onClick={() => { navigate('/shop'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
-      <NavItem icon={ShoppingBag} view="cart" badge={cartCount} onClick={() => { navigate('/cart'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
-      <NavItem icon={User} view="profile" onClick={() => user ? navigate('/profile') : onOpenAuth()} />
+    <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[80] w-[92%] max-w-[400px]">
+      <div className="bg-white/80 backdrop-blur-2xl border border-emerald-deep/10 px-4 py-3 flex items-center justify-between shadow-[0_20px_50px_rgba(0,0,0,0.1)] rounded-[2rem]">
+        {items.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => {
+              if (item.id === 'profile' && !user) {
+                onOpenAuth();
+              } else {
+                setView(item.id);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            }}
+            className={`relative flex flex-col items-center gap-1 transition-all duration-300 ${activeView === item.id ? 'text-emerald-deep scale-110' : 'text-emerald-deep/30'}`}
+          >
+            <div className={`p-2 rounded-2xl transition-all duration-500 ${activeView === item.id ? 'bg-emerald-deep/10 shadow-lg shadow-emerald-deep/5' : ''}`}>
+              <item.icon className="h-5 w-5" strokeWidth={activeView === item.id ? 2.5 : 2} />
+              {item.badge !== undefined && item.badge > 0 && (
+                <span className="absolute -top-1 -right-1 h-5 w-5 bg-emerald-deep text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-lg">
+                  {item.badge}
+                </span>
+              )}
+            </div>
+            <span className="text-[8px] font-bold uppercase tracking-widest">{item.label}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 };
@@ -1007,6 +1012,63 @@ const NotificationInbox = ({
         )}
       </div>
     </div>
+  );
+};
+
+const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
+  useEffect(() => {
+    const timer = setTimeout(onFinish, 2500);
+    return () => clearTimeout(timer);
+  }, [onFinish]);
+
+  return (
+    <motion.div 
+      initial={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[1000] bg-white flex flex-col items-center justify-center"
+    >
+      <motion.div
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 1, ease: "easeOut" }}
+        className="relative"
+      >
+        <div className="h-32 w-32 rounded-[2.5rem] bg-emerald-deep/5 flex items-center justify-center mb-8 relative">
+          <motion.div
+            animate={{ 
+              scale: [1, 1.2, 1],
+              rotate: [0, 10, -10, 0]
+            }}
+            transition={{ 
+              duration: 2, 
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          >
+            <ChefHat className="h-16 w-16 text-emerald-deep" strokeWidth={1} />
+          </motion.div>
+          <div className="absolute inset-0 border-2 border-emerald-deep/10 rounded-[2.5rem] animate-ping" />
+        </div>
+      </motion.div>
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.5, duration: 0.8 }}
+        className="text-center space-y-2"
+      >
+        <h1 className="text-4xl font-heading font-bold text-emerald-deep italic tracking-tighter uppercase">Koseli</h1>
+        <p className="text-[10px] font-bold text-emerald-deep/30 uppercase tracking-[0.6em]">Premium Artisanal Bakery</p>
+      </motion.div>
+      
+      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-48 h-1 bg-emerald-deep/5 rounded-full overflow-hidden">
+        <motion.div 
+          initial={{ x: '-100%' }}
+          animate={{ x: '100%' }}
+          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          className="w-full h-full bg-emerald-deep shadow-[0_0_10px_rgba(0,174,239,0.5)]"
+        />
+      </div>
+    </motion.div>
   );
 };
 
@@ -2197,6 +2259,8 @@ const AdminDashboard = ({
   );
 };
 
+const ADMIN_EMAIL = 'REF_NEW_ADMIN_EMAIL@gmail.com'; // Replace this with your new admin Gmail address
+
 export default function App() {
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -2245,6 +2309,7 @@ export default function App() {
     else if (path === '/admin') setActiveView('admin');
   }, [location.pathname]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSplash, setShowSplash] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
   const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
@@ -2282,7 +2347,7 @@ export default function App() {
     const unsubscribe = auth.onAuthStateChanged(async (u) => {
       setUser(u);
       if (u) {
-        const isUserAdmin = u.email === 'tejsinghsaud55@gmail.com';
+        const isUserAdmin = u.email === ADMIN_EMAIL;
         setIsAdmin(isUserAdmin);
 
         // Create/Update user document
@@ -2344,7 +2409,7 @@ export default function App() {
     const unsubProducts = onSnapshot(qProducts, (snapshot) => {
       if (snapshot.empty) {
         // Only attempt to seed if we are the admin
-        if (auth.currentUser?.email === 'tejsinghsaud55@gmail.com') {
+        if (auth.currentUser?.email === ADMIN_EMAIL) {
           INITIAL_PRODUCTS.forEach(async (p) => {
             try {
               await addDoc(collection(db, 'products'), p);
@@ -2863,6 +2928,10 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-white font-sans antialiased flex flex-col">
+        <AnimatePresence>
+          {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+        </AnimatePresence>
+
         <Toaster position="bottom-center" />
         
         <SearchOverlay 
@@ -2908,6 +2977,14 @@ export default function App() {
           }}
         />
 
+        <BottomNav 
+          activeView={activeView} 
+          setView={setActiveView} 
+          cartCount={cart.length} 
+          user={user}
+          onOpenAuth={() => setIsAuthOpen(true)}
+        />
+
         <AnimatePresence>
           {isCartOpen && (
             <>
@@ -2947,18 +3024,20 @@ export default function App() {
         
         <Routes>
           <Route path="/product/:id" element={
-            <ProductDetailsPage 
-              products={products} 
-              onAddToCart={handlePageAddToCart} 
-              wishlist={wishlist}
-              onToggleWishlist={toggleWishlist}
-            />
+            <div className="pb-20 md:pb-0 font-sans">
+              <ProductDetailsPage 
+                products={products} 
+                onAddToCart={handlePageAddToCart} 
+                wishlist={wishlist}
+                onToggleWishlist={toggleWishlist}
+              />
+            </div>
           } />
-          <Route path="/payment-test" element={<PaymentTest />} />
-          <Route path="/payment-success" element={<PaymentSuccess />} />
-          <Route path="/payment-failure" element={<PaymentFailure />} />
+          <Route path="/payment-test" element={<div className="pb-20 md:pb-0"><PaymentTest /></div>} />
+          <Route path="/payment-success" element={<div className="pb-20 md:pb-0"><PaymentSuccess /></div>} />
+          <Route path="/payment-failure" element={<div className="pb-20 md:pb-0"><PaymentFailure /></div>} />
           <Route path="*" element={
-            <main className={`${activeView === 'admin' ? 'w-full' : 'container mx-auto px-4'} py-8 flex-1 flex flex-col min-h-[90vh]`}>
+            <main className={`${activeView === 'admin' ? 'w-full' : 'container mx-auto px-4'} py-8 flex-1 flex flex-col min-h-[90vh] pb-32 md:pb-12`}>
                 <AnimatePresence mode="wait">
                   {activeView === 'menu' && (
                   <motion.div
@@ -3679,20 +3758,6 @@ export default function App() {
           </div>
         </footer>
 
-
-      <BottomNav 
-        cartCount={cart.length} 
-        onOpenCart={() => setActiveView('cart')} 
-        onOpenAuth={() => setIsAuthOpen(true)}
-        user={user}
-        onOpenOrders={() => setActiveView('orders')}
-        onOpenProfile={() => setActiveView('profile')}
-        activeView={activeView}
-        setView={setActiveView}
-        isAdmin={isAdmin}
-      />
-
-
       <Dialog open={isAuthOpen} onOpenChange={setIsAuthOpen}>
         <DialogContent className="sm:max-w-[450px] w-[95vw] rounded-[4rem] border-none shadow-2xl p-0 overflow-hidden">
           <div className="bg-emerald-deep p-12 md:p-16 text-white text-center relative overflow-hidden">
@@ -3841,18 +3906,17 @@ export default function App() {
 
       {/* Checkout Dialog */}
       <Dialog open={isOrderModalOpen} onOpenChange={setIsOrderModalOpen}>
-        <DialogContent className="sm:max-w-[650px] w-[95vw] max-h-[90vh] flex flex-col overflow-hidden rounded-[4rem] p-0 border-none shadow-2xl bg-white">
-          <div className="bg-emerald-deep p-12 md:p-16 text-white relative overflow-hidden shrink-0">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <DialogHeader className="relative z-10 space-y-4">
-              <div className="h-16 w-16 bg-white/10 backdrop-blur-md rounded-[1rem] flex items-center justify-center border border-white/20">
-                <LayoutDashboard className="h-8 w-8 text-white" />
-              </div>
-              <DialogTitle className="text-4xl md:text-6xl font-heading font-bold italic uppercase tracking-tighter">Artisan Checkout</DialogTitle>
-              <DialogDescription className="text-white/50 text-[10px] font-bold uppercase tracking-[0.4em]">Finalize your collection</DialogDescription>
-            </DialogHeader>
+        <DialogContent className="sm:max-w-[600px] w-[95vw] max-h-[90vh] flex flex-col overflow-hidden rounded-3xl p-0 border border-emerald-deep/10 shadow-2xl bg-white">
+          <div className="p-10 md:p-12 border-b border-emerald-deep/5 shrink-0 flex items-center justify-between bg-emerald-deep/5">
+            <div className="space-y-1">
+              <DialogTitle className="text-2xl font-bold text-emerald-deep">Checkout</DialogTitle>
+              <DialogDescription className="text-[10px] uppercase tracking-widest font-bold text-emerald-deep/40">Complete your artisan sequence</DialogDescription>
+            </div>
+            <div className="h-12 w-12 bg-emerald-deep/10 rounded-2xl flex items-center justify-center">
+              <ShoppingBag className="h-6 w-6 text-emerald-deep" />
+            </div>
           </div>
-          <div className="flex-1 p-10 md:p-14 overflow-y-auto custom-scrollbar min-h-0 relative">
+          <div className="flex-1 p-10 md:p-12 overflow-y-auto custom-scrollbar min-h-0 relative">
             <div className="space-y-12 pb-10">
               {/* Delivery Info */}
               <div className="space-y-8">
@@ -4186,15 +4250,17 @@ export default function App() {
       </Dialog>
 
       <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
-        <DialogContent className="sm:max-w-[480px] w-[95vw] rounded-[4rem] border-none shadow-2xl overflow-hidden p-0 bg-white">
-          <div className="bg-emerald-deep p-12 md:p-16 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <DialogHeader className="relative z-10 space-y-4 text-center">
-              <DialogTitle className="text-4xl md:text-5xl font-heading font-bold italic uppercase tracking-tighter">Artisan Profile</DialogTitle>
-              <DialogDescription className="text-white/50 text-[10px] font-bold uppercase tracking-[0.4em]">The custodian of taste</DialogDescription>
-            </DialogHeader>
+        <DialogContent className="sm:max-w-[480px] w-[95vw] rounded-3xl border border-emerald-deep/10 shadow-2xl overflow-hidden p-0 bg-white">
+          <div className="p-10 md:p-12 border-b border-emerald-deep/5 shrink-0 flex items-center justify-between bg-emerald-deep/[0.02]">
+            <div className="space-y-1">
+              <DialogTitle className="text-2xl font-bold text-emerald-deep">Profile</DialogTitle>
+              <DialogDescription className="text-[10px] uppercase tracking-widest font-bold text-emerald-deep/40">Custodian of Taste</DialogDescription>
+            </div>
+            <div className="h-12 w-12 bg-emerald-deep/10 rounded-2xl flex items-center justify-center">
+              <UserCircle className="h-6 w-6 text-emerald-deep" />
+            </div>
           </div>
-          <div className="p-10 md:p-14 space-y-10">
+          <div className="p-10 md:p-12 space-y-10">
             {user && (
               <div className="space-y-10">
                 <div className="flex items-center gap-8 p-10 bg-emerald-deep/[0.03] rounded-[3rem] border border-emerald-deep/5 shadow-inner">
@@ -4245,18 +4311,17 @@ export default function App() {
       </Dialog>
 
       <Dialog open={isOrdersOpen} onOpenChange={setIsOrdersOpen}>
-        <DialogContent className="sm:max-w-[850px] w-[95vw] max-h-[85vh] overflow-hidden flex flex-col rounded-[4rem] border-none shadow-[0_40px_100px_rgba(0,0,0,0.15)] bg-white p-0">
-          <div className="bg-emerald-deep p-12 md:p-16 text-white relative overflow-hidden shrink-0">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <DialogHeader className="relative z-10 space-y-4">
-              <div className="h-16 w-16 bg-white/10 backdrop-blur-md rounded-[1rem] flex items-center justify-center border border-white/20">
-                <Box className="h-8 w-8 text-white" />
-              </div>
-              <DialogTitle className="text-4xl md:text-6xl font-heading font-bold italic uppercase tracking-tighter">Collection Archive</DialogTitle>
-              <DialogDescription className="text-white/50 text-[10px] font-bold uppercase tracking-[0.4em]">Review your sweet history</DialogDescription>
-            </DialogHeader>
+        <DialogContent className="sm:max-w-[850px] w-[95vw] max-h-[85vh] overflow-hidden flex flex-col rounded-3xl border border-emerald-deep/10 shadow-[0_40px_100px_rgba(0,0,0,0.15)] bg-white p-0">
+          <div className="p-10 md:p-12 border-b border-emerald-deep/5 shrink-0 flex items-center justify-between bg-emerald-deep/[0.02]">
+            <div className="space-y-1">
+              <DialogTitle className="text-2xl font-bold text-emerald-deep">Collection History</DialogTitle>
+              <DialogDescription className="text-[10px] uppercase tracking-widest font-bold text-emerald-deep/40">Review your history</DialogDescription>
+            </div>
+            <div className="h-12 w-12 bg-emerald-deep/10 rounded-2xl flex items-center justify-center">
+              <Box className="h-6 w-6 text-emerald-deep" />
+            </div>
           </div>
-          <div className="flex-1 p-10 md:p-14 overflow-y-auto custom-scrollbar min-h-0 relative">
+          <div className="flex-1 p-10 md:p-12 overflow-y-auto custom-scrollbar min-h-0 relative">
             <div className="grid gap-10 pr-2 pb-10">
               {orders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-24 text-center gap-6">
@@ -4360,16 +4425,15 @@ export default function App() {
       </Dialog>
 
       <Dialog open={isProductFormOpen} onOpenChange={setIsProductFormOpen}>
-        <DialogContent className="sm:max-w-[550px] w-[95vw] rounded-[4rem] border-none shadow-2xl p-0 overflow-hidden bg-white">
-          <div className="bg-emerald-deep p-12 md:p-14 text-white relative overflow-hidden shrink-0">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <DialogHeader className="relative z-10 space-y-4">
-              <div className="h-14 w-14 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20">
-                <ChefHat className="h-7 w-7 text-white" />
-              </div>
-              <DialogTitle className="text-3xl md:text-5xl font-heading font-bold italic uppercase tracking-tighter">{editingProduct ? 'Curate Masterpiece' : 'Birth New Creation'}</DialogTitle>
-              <DialogDescription className="text-white/50 text-[10px] font-bold uppercase tracking-[0.4em]">Define the artisanal properties</DialogDescription>
-            </DialogHeader>
+        <DialogContent className="sm:max-w-[550px] w-[95vw] rounded-3xl border border-emerald-deep/10 shadow-2xl p-0 overflow-hidden bg-white">
+          <div className="p-10 md:p-12 border-b border-emerald-deep/5 shrink-0 flex items-center justify-between bg-emerald-deep/[0.02]">
+            <div className="space-y-1">
+              <DialogTitle className="text-2xl font-bold text-emerald-deep">{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+              <DialogDescription className="text-[10px] uppercase tracking-widest font-bold text-emerald-deep/40">Define the artisanal properties</DialogDescription>
+            </div>
+            <div className="h-12 w-12 bg-emerald-deep/10 rounded-2xl flex items-center justify-center">
+              <ChefHat className="h-6 w-6 text-emerald-deep" />
+            </div>
           </div>
           <div className="p-10 md:p-12 space-y-10 overflow-y-auto max-h-[60vh] custom-scrollbar">
             <div className="grid gap-10">
@@ -4575,34 +4639,33 @@ export default function App() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
-        <DialogContent className="sm:max-w-[400px] w-[95vw] rounded-[4rem] border-none shadow-[0_50px_100px_rgba(239,68,68,0.15)] p-0 overflow-hidden bg-white">
-          <div className="bg-red-600 p-12 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="relative z-10 flex flex-col items-center text-center space-y-4">
-              <div className="h-16 w-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20">
-                <Trash2 className="h-8 w-8 text-white" strokeWidth={1.5} />
-              </div>
-              <h2 className="text-3xl font-heading font-bold italic tracking-tighter uppercase leading-none">Delete Piece?</h2>
-              <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.4em]">This action is irreversible</p>
+        <DialogContent className="sm:max-w-[380px] w-[90vw] rounded-3xl border border-red-100 shadow-2xl p-0 overflow-hidden bg-white">
+          <div className="p-8 border-b border-red-50 bg-red-50 flex items-center gap-4">
+            <div className="h-10 w-10 bg-red-100 rounded-xl flex items-center justify-center text-red-600">
+              <Trash2 className="h-5 w-5" />
+            </div>
+            <div className="space-y-0.5">
+              <DialogTitle className="text-xl font-bold text-red-600">Delete Product?</DialogTitle>
+              <p className="text-[10px] uppercase font-bold tracking-widest text-red-400">Irreversible Action</p>
             </div>
           </div>
-          <div className="p-10 md:p-12 space-y-10">
-            <p className="text-sm text-center text-gray-500 font-medium leading-relaxed italic">
-              "Confirming this will permanently remove this artisanal creation from the boutique. Are you certain?"
+          <div className="p-8 space-y-8 text-center sm:text-left">
+            <p className="text-sm text-gray-500 font-medium leading-relaxed italic">
+              "This will permanently remove this item from the store. Are you sure you wish to proceed?"
             </p>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
               <Button 
-                className="h-16 rounded-[1.5rem] bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] uppercase tracking-widest shadow-xl shadow-red-600/10 transition-all active:scale-95"
+                className="h-14 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-red-600/10 transition-all active:scale-95"
                 onClick={confirmDeleteProduct}
               >
-                Yes, Delete Permanently
+                Yes, Delete permanently
               </Button>
               <Button 
                 variant="ghost" 
-                className="h-16 rounded-[1.5rem] font-bold uppercase tracking-widest text-[10px] text-gray-400 hover:text-emerald-deep"
+                className="h-14 rounded-2xl font-bold uppercase tracking-widest text-[10px] text-gray-400 hover:text-emerald-deep"
                 onClick={() => setIsDeleteConfirmOpen(false)}
               >
-                Retain Masterpiece
+                Cancel
               </Button>
             </div>
           </div>
